@@ -50,7 +50,7 @@ func (o *EmphasisCanvas) Fill(value Attributes) {
 func (o *EmphasisCanvas) Render(b *Buffer, stencil *Stencil, position Coordinates, offset Coordinates) {
 	for i := 0; i < stencil.Height(); i++ {
 		for j := 0; j < stencil.Width(); j++ {
-			if stencil.IsNotMasked(i, j) {
+			if stencil.CellIsNotMasked(i, j) {
 				r1 := position.Row + i
 				c1 := position.Col + j
 				r2 := offset.Row + i

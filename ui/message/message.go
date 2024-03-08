@@ -11,11 +11,6 @@ type Message struct {
 	TimeStamp time.Time
 }
 
-type ParamsScreenResize struct {
-	Rows int
-	Cols int
-}
-
 // Faire un SetSize
 type ParamsResize struct {
 	Rows int
@@ -32,28 +27,8 @@ type ParamsSetPosition struct {
 	Col int
 }
 
-type ParamsKey struct {
-	Rune  rune
-	Key   int
-	Shift bool
-	Ctrl  bool
-	Alt   bool
-	Name  string
-}
-
 type ParamsSetTheme struct {
 	Name string
-}
-
-type ParamsMouse struct {
-	Row             int
-	Col             int
-	ButtonPrimary   bool
-	ButtonSecondary bool
-	ButtonMiddle    bool
-	Shift           bool
-	Ctrl            bool
-	Alt             bool
 }
 
 type ParamsMouseExt struct {

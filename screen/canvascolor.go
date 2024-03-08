@@ -95,7 +95,6 @@ func (o *FColorCanvas) Render(b *Buffer, stencil *Stencil, position Coordinates,
 			case 1:
 				b.PokeFColor(r1, c1, c)
 			default:
-				// TODO Factorize these identical blocs of code
 				colorToBlendWith, _ := b.PeekFColor(r1, c1)
 				blendedColor := BlendAlpha(c, colorToBlendWith, c)
 				b.PokeFColor(r1, c1, blendedColor)
@@ -131,7 +130,7 @@ func (o *BColorCanvas) Render(b *Buffer, stencil *Stencil, position Coordinates,
 func (o *ColorCanvas) render(b *Buffer, stencil *Stencil, position Coordinates, offset Coordinates, renderFunc func(int, int, int, int)) {
 	for i := 0; i < stencil.Height(); i++ {
 		for j := 0; j < stencil.Width(); j++ {
-			if stencil.IsNotMasked(i, j) {
+			if stencil.CellIsNotMasked(i, j) {
 				r1 := position.Row + i
 				c1 := position.Col + j
 				r2 := offset.Row + i

@@ -50,11 +50,11 @@ func (o *Stencil) Resize(height, width int) {
 	}
 }
 
-func (o *Stencil) EnableMask()        { o.maskEnabled = true }
-func (o *Stencil) DisableMask()       { o.maskEnabled = false }
-func (o Stencil) IsMaskEnabled() bool { return o.maskEnabled }
+func (o *Stencil) EnableMask()      { o.maskEnabled = true }
+func (o *Stencil) DisableMask()     { o.maskEnabled = false }
+func (o Stencil) MaskEnabled() bool { return o.maskEnabled }
 
-func (o *Stencil) IsNotMasked(row, col int) bool {
+func (o *Stencil) CellIsNotMasked(row, col int) bool {
 	if o.withMask && o.maskEnabled {
 		return !o.mask[row][col]
 	}

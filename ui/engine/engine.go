@@ -2,7 +2,6 @@ package engine
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -14,6 +13,14 @@ import (
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
+type Logger interface {
+	Debug(msg string, args ...any)
+}
+
+type NilLogger struct{}
+
+func (o NilLogger) Debug(msg string, args ...any) {}
+
 type Engine struct {
 	*Screen
 	Entities
@@ -24,7 +31,7 @@ type Engine struct {
 	screenWidth   int
 	renderFunc    func(o *screen.Buffer) int
 	mouseControl
-	inputMessageChannel     chan message.Message
+	inputMessageChannel     chan message.InputMessage
 	uiMessageChannel        chan message.Message
 	refreshCount            int
 	refreshRequests         int
@@ -38,19 +45,16 @@ type Engine struct {
 	OnMouse
 	property.OnScreenResize
 	MinimizeVobj ntt.IEntity
-	logger       LogDebug
+	Logger
+	beforeInputMessageProcessing func(message.InputMessage)
 }
 
-type LogDebug interface {
-	Debug(s string) error
-}
-
-func NewEngine(inputMessageChannel, uiMessageChannel chan message.Message, renderFunc func(o *screen.Buffer) int, refreshIntervalInMilliseconds int, logger LogDebug) (*Engine, error) {
+func New(inputMessageChannel chan message.InputMessage, uiMessageChannel chan message.Message, renderFunc func(o *screen.Buffer) int, refreshIntervalInMilliseconds int) (*Engine, error) {
 	if refreshIntervalInMilliseconds < 1 || refreshIntervalInMilliseconds > 1000 {
 		return nil, errors.New("the value of refreshIntervalInMilliseconds must be between 1 and 1000")
 	}
 	o := new(Engine)
-	o.logger = logger
+	o.Logger = &NilLogger{}
 	o.Actions = NewActions()
 	o.Entities = make(map[string]ntt.IEntity)
 	o.pointer = ntt.NewPointer()
@@ -62,6 +66,14 @@ func NewEngine(inputMessageChannel, uiMessageChannel chan message.Message, rende
 	o.uiMessageChannel = uiMessageChannel
 
 	return o, nil
+}
+
+func (o *Engine) SetLogger(logger Logger) {
+	o.Logger = logger
+}
+
+func (o *Engine) SetFuncBeforeInputMessageProcessing(f func(message.InputMessage)) {
+	o.beforeInputMessageProcessing = f
 }
 
 func (o *Engine) AddEntity(v ntt.IEntity, parent string) ntt.IEntity {
@@ -129,33 +141,26 @@ func (o *Engine) refresh() {
 			o.renderingMutex.Unlock()
 		}
 		time.Sleep(o.RefreshInterval)
-
 	}
 }
 
 func (o *Engine) processInputMessages() {
 	for {
 		m := <-o.inputMessageChannel
-		o.logger.Debug(fmt.Sprint("[INPUTMES]", m))
+		if o.beforeInputMessageProcessing != nil {
+			o.beforeInputMessageProcessing(m)
+		}
+		o.Debug("INPMES", "Msg", m)
 
-		switch m.MessageId {
-
-		case message.MessageIdScreenResize:
-			if params, ok := m.Params.(message.ParamsScreenResize); ok {
-				o.updateScreenSize(params.Rows, params.Cols)
-			}
+		switch mes := m.(type) {
+		case message.InputMessageScreenSize:
+			o.updateScreenSize(mes.Height, mes.Width)
 			o.Refresh()
-
-		case message.MessageIdMouse:
-			if params, ok := m.Params.(message.ParamsMouse); ok {
-				o.processMouse(params)
-			}
+		case message.InputMessageMouse:
+			o.processMouse(mes.ParamsMouse)
 			o.Refresh()
-
-		case message.MessageIdKey:
-			if params, ok := m.Params.(message.ParamsKey); ok {
-				o.processKey(params)
-			}
+		case message.InputMessageKey:
+			o.processKey(mes.ParamsKey)
 			o.Refresh()
 		}
 	}
@@ -164,7 +169,7 @@ func (o *Engine) processInputMessages() {
 func (o *Engine) processUiMessages() {
 	for loop := true; loop; {
 		m := <-o.uiMessageChannel
-		o.logger.Debug(fmt.Sprint("[MESSAGE]", m))
+		o.Debug("MESSAGE", "Msg", m)
 
 		switch m.MessageId {
 

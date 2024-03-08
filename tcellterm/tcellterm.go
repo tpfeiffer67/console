@@ -6,13 +6,10 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/encoding"
 	"github.com/tpfeiffer67/console/ui/message"
 )
 
-func StartTcell(messagesChannel chan message.Message) tcell.Screen {
-	encoding.Register()
-
+func StartTcell(messagesChannel chan message.InputMessage) tcell.Screen {
 	tcellScreen, e := tcell.NewScreen()
 	if e != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", e)
@@ -31,32 +28,39 @@ func StartTcell(messagesChannel chan message.Message) tcell.Screen {
 			tcellEvent := tcellScreen.PollEvent()
 			switch eventType := tcellEvent.(type) {
 			case *tcell.EventResize:
-				width, height := eventType.Size()
-				messagesChannel <- message.Message{MessageId: message.MessageIdScreenResize, TimeStamp: time.Now(), Params: message.ParamsScreenResize{Rows: height, Cols: width}}
+				m := message.InputMessageScreenSize{}
+				//m.MessageId = message.MessageIdScreenResize
+				m.TimeStamp = time.Now()
+				m.Width, m.Height = eventType.Size()
+				messagesChannel <- m
 
 			case *tcell.EventKey:
-				key := int(eventType.Key())
-				r := eventType.Rune()
-				shift, ctrl, alt := getModifiers(eventType.Modifiers())
-				name := getName(eventType)
-				messagesChannel <- message.Message{MessageId: message.MessageIdKey, TimeStamp: time.Now(), Params: message.ParamsKey{
-					Rune: r, Key: key, Shift: shift, Ctrl: ctrl, Alt: alt, Name: name}}
+				m := message.InputMessageKey{}
+				//m.MessageId = message.MessageIdKey
+				m.TimeStamp = time.Now()
+				m.Rune = eventType.Rune()
+				m.Key = int(eventType.Key())
+				m.Shift, m.Ctrl, m.Alt = getModifiers(eventType.Modifiers())
+				m.Name = getName(eventType)
+				messagesChannel <- m
 
 			case *tcell.EventMouse:
-				col, row := eventType.Position()
-				buttons := eventType.Buttons()
-				b1 := iifButton(buttons, tcell.ButtonPrimary)
-				b2 := iifButton(buttons, tcell.ButtonSecondary)
-				b3 := iifButton(buttons, tcell.ButtonMiddle)
-				shift, ctrl, alt := getModifiers(eventType.Modifiers())
-				eventType.Buttons()
-				messagesChannel <- message.Message{MessageId: message.MessageIdMouse, TimeStamp: time.Now(), Params: message.ParamsMouse{
-					Row: row, Col: col, ButtonPrimary: b1, ButtonSecondary: b2, ButtonMiddle: b3, Shift: shift, Ctrl: ctrl, Alt: alt}}
+				m := message.InputMessageMouse{}
+				//m.MessageId = message.MessageIdMouse
+				m.TimeStamp = time.Now()
+				m.Col, m.Row = eventType.Position()
+				m.ButtonPrimary, m.ButtonSecondary, m.ButtonMiddle = mouseButtons(eventType.Buttons())
+				m.Shift, m.Ctrl, m.Alt = getModifiers(eventType.Modifiers())
+				messagesChannel <- m
 			}
 		}
 	}()
 
 	return tcellScreen
+}
+
+func mouseButtons(buttons tcell.ButtonMask) (bool, bool, bool) {
+	return iifButton(buttons, tcell.ButtonPrimary), iifButton(buttons, tcell.ButtonSecondary), iifButton(buttons, tcell.ButtonMiddle)
 }
 
 func iifButton(buttons, mask tcell.ButtonMask) bool {
