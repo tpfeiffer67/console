@@ -1,19 +1,18 @@
 package ntt
 
 import (
+	"github.com/tpfeiffer67/console/screen"
 	"github.com/tpfeiffer67/console/screenutils"
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
 type StatusBar struct {
-	IEntity
-	theme.ITheme
+	IWidget
 }
 
-func NewStatusBar(id string, syst ISystem) *TrackBar {
-	o := new(TrackBar)
-	o.IEntity = NewEntity(id, 1, 50, syst) // TODO Provide the width of the screen on the create
-	o.ITheme = theme.NewTheme(theme.STYLE_STATUSBAR, theme.STATUSBAR_ITEMS_SEPARATOR)
+func NewStatusBar(id string, syst ISystem) *StatusBar {
+	o := new(StatusBar)
+	o.IWidget = NewWidget(id, 1, 50, syst) // TODO Provide the width of the screen on the create
 	o.SetZOrderLayer(1000)
 	o.SetZOrder(1)
 	o.SetCanMove(false)
@@ -31,12 +30,14 @@ func NewStatusBar(id string, syst ISystem) *TrackBar {
 		sep, _ := theme.CurrentTheme.GetString(theme.STATUSBAR_ITEMS_SEPARATOR)
 		sepWidth := screenutils.GetStyledStringLen(sep)
 		col := 0
-		syst.CallFuncForEachChildrenEntity(id, func(v IEntity) {
-			v.SetPosition(0, col)
-			w := v.Width()
-			col = col + w
-			screenutils.DrawStyledString(0, col, sep, o, style, theme.ToColor)
-			col = col + sepWidth
+		syst.CallFuncForEachChildrenEntity(id, func(a any) {
+			if e, ok := a.(screen.SizeGetterAndPositionSetter); ok {
+				e.SetPosition(0, col)
+				w := e.Width()
+				col = col + w
+				screenutils.DrawStyledString(0, col, sep, o, style, theme.ToColor)
+				col = col + sepWidth
+			}
 		})
 	})
 

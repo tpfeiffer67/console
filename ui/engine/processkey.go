@@ -26,9 +26,11 @@ func (o *Engine) processKey(keyParams message.ParamsKey) {
 	o.DoOnHotKey(keyParams)
 
 	// The priority goes to the focused entity.
-	if v, ok := o.GetFocusedEntity(); ok {
-		if v.ProcessMessage(message.MessageIdKey, keyParams) {
-			return
+	if a, ok := o.GetFocusedEntity(); ok {
+		if e, ok := a.(message.IMessageListener); ok {
+			if e.ProcessMessage(message.MessageIdKey, keyParams) {
+				return
+			}
 		}
 	}
 

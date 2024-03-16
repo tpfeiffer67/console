@@ -12,15 +12,13 @@ import (
 // TODO Add selected and hovered style
 
 type ColorImage struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	Background rune
 }
 
 func NewImage(id string, row, col int, height, width int, image image.Image, syst ISystem) *ColorImage {
 	o := new(ColorImage)
-	o.IEntity = NewEntity(id, height, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_IMAGE_BACKGROUND, theme.IMAGE_BACKGROUND)
+	o.IWidget = NewWidget(id, height, width, syst)
 	o.SetPosition(row, col)
 	o.SetCanMove(true)
 	o.SetFocusable(true)

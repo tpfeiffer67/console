@@ -2,23 +2,24 @@ package ntt
 
 import (
 	"github.com/tpfeiffer67/console/screen"
+	"github.com/tpfeiffer67/console/ui/property"
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
 type MinimizingBar struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	ISystem
 }
 
-func (o *MinimizingBar) AttachChild(e IEntity) {
-	e.SetParent(o.Id())
+func (o *MinimizingBar) AttachChild(a any) {
+	if e, ok := a.(property.IParent); ok {
+		e.SetParent(o.Id())
+	}
 }
 
 func NewMinimizingBar(id string, syst ISystem) *MinimizingBar {
 	o := new(MinimizingBar)
-	o.IEntity = NewEntity(id, 1, 1, syst) // TODO Provide the width of the screen on the creation
-	o.ITheme = theme.NewTheme(theme.STYLE_MINIMIZINGBAR, theme.MINIMIZINGBAR_STICKER_WIDTH)
+	o.IWidget = NewWidget(id, 1, 1, syst) // TODO Provide the width of the screen on the creation
 	o.ISystem = syst
 	o.SetZOrderLayer(1000)
 	o.SetZOrder(2)
@@ -31,13 +32,15 @@ func NewMinimizingBar(id string, syst ISystem) *MinimizingBar {
 
 		stickerWidth, _ := o.GetIntDef(theme.MINIMIZINGBAR_STICKER_WIDTH, 10)
 		row, col := 0, 0
-		syst.CallFuncForEachChildrenEntity(id, func(v IEntity) {
+		syst.CallFuncForEachChildrenEntity(id, func(a any) {
 			if col+stickerWidth > o.Width() {
 				row++
 				col = 0
 			}
-			v.SetPosition(row, col)
-			v.Resize(1, stickerWidth)
+			if e, ok := a.(screen.SizeSetterAndPositionSetter); ok {
+				e.SetPosition(row, col)
+				e.Resize(1, stickerWidth)
+			}
 			col = col + stickerWidth
 		})
 		height := row + 1

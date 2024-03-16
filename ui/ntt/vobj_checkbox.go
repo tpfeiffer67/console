@@ -8,8 +8,7 @@ import (
 )
 
 type Checkbox struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	property.PropertyText
 	checked      bool
 	CheckedBox   string
@@ -38,8 +37,7 @@ func (o *Checkbox) doOnChange() {
 
 func NewCheckbox(id string, row, col int, label string, syst ISystem) *Checkbox {
 	o := new(Checkbox)
-	o.IEntity = NewEntity(id, 1, 0, syst) // The actual width is unknown here. It depends on the design of the box.
-	o.ITheme = theme.NewTheme(theme.STYLE_CHECKBOX, theme.STYLE_CHECKBOX_HOVERED, theme.STYLE_CHECKBOX_FOCUSED, theme.STYLE_CHECKBOX_FOCUSEDHOVERED, theme.CHECKBOX_CHECKED, theme.CHECKBOX_NOTCHECKED)
+	o.IWidget = NewWidget(id, 1, 0, syst) // The actual width is unknown here. It depends on the design of the box.
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
 	o.SetFocusable(true)
@@ -47,11 +45,11 @@ func NewCheckbox(id string, row, col int, label string, syst ISystem) *Checkbox 
 	o.SetText(label)
 
 	// TODO create function setDefaultGetFocusAndLostFocus()
-	o.SetOnFocus(func(foc property.IFocus) {
+	o.SetOnFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), true)
 	})
 
-	o.SetOnLostFocus(func(foc property.IFocus) {
+	o.SetOnLostFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), false)
 	})
 
@@ -60,7 +58,7 @@ func NewCheckbox(id string, row, col int, label string, syst ISystem) *Checkbox 
 	})
 
 	o.SetOnDraw(func() {
-		style := ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_CHECKBOX, theme.STYLE_CHECKBOX_HOVERED, theme.STYLE_CHECKBOX_FOCUSED, theme.STYLE_CHECKBOX_FOCUSEDHOVERED)
+		style := ClearWithStyle(o, o, theme.STYLE_CHECKBOX, theme.STYLE_CHECKBOX_HOVERED, theme.STYLE_CHECKBOX_FOCUSED, theme.STYLE_CHECKBOX_FOCUSEDHOVERED)
 		box := o.getBox()
 		l := screenutils.DrawStyledString(0, 0, box, o, style, theme.ToColor)
 		screenutils.DrawStyledString(0, l, o.Text(), o, style, theme.ToColor)

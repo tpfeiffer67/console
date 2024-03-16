@@ -6,6 +6,15 @@ import (
 	"github.com/tpfeiffer67/console/screen"
 )
 
+type ICombosCanvas interface {
+	SetDefaults(rune, screen.Style)
+	Clear()
+}
+
+type IStencil interface {
+	GetStencil() *screen.Stencil
+}
+
 // ComboCanvas is a Combined Canvas Type 1.
 type ComboCanvas struct {
 	*screen.Size
@@ -71,9 +80,9 @@ func (o *ComboCanvas) SetDefaults(r rune, style screen.Style) {
 }
 
 /*
-func (o *ComboCanvas) GetCanvas() (*screen.RuneCanvas, *screen.FColorCanvas, *screen.BColorCanvas, *screen.EmphasisCanvas) {
-	return o.RuneCanvas, o.FColorCanvas, o.BColorCanvas, o.EmphasisCanvas
-}
+	func (o *ComboCanvas) GetCanvas() (*screen.RuneCanvas, *screen.FColorCanvas, *screen.BColorCanvas, *screen.EmphasisCanvas) {
+		return o.RuneCanvas, o.FColorCanvas, o.BColorCanvas, o.EmphasisCanvas
+	}
 */
 func (o *ComboCanvas) GetRuneCanvas() *screen.RuneCanvas         { return o.RuneCanvas }
 func (o *ComboCanvas) GetFColorCanvas() *screen.FColorCanvas     { return o.FColorCanvas }

@@ -3,18 +3,20 @@ package engine
 import (
 	"time"
 
+	"github.com/tpfeiffer67/console/screen"
 	"github.com/tpfeiffer67/console/ui/message"
 	"github.com/tpfeiffer67/console/ui/ntt"
+	"github.com/tpfeiffer67/console/ui/property"
 )
 
 type mouseControl struct {
 	pointer          *ntt.Pointer
-	pointedEntity    ntt.IEntity
+	pointedEntity    any
 	mouseParams      message.ParamsMouse
 	mouseControlMode MouseControlMode
 	memoMouseRow     int
 	memoMouseCol     int
-	memoEntity       ntt.IEntity
+	memoEntity       any
 	memoEntityRow    int
 	memoEntityCol    int
 	memoEntityHeight int
@@ -45,30 +47,36 @@ func (o *Engine) processMouse(mouseParams message.ParamsMouse) {
 		case MouseControlModeDefault:
 			if !o.mouseParams.ButtonPrimary && mouseParams.ButtonPrimary {
 				if o.pointedEntity != nil {
-					o.mouseControlMode = MouseControlModeMove
-					o.memoMouseRow = mouseParams.Row
-					o.memoMouseCol = mouseParams.Col
-					o.memoEntityRow = o.pointedEntity.Row()
-					o.memoEntityCol = o.pointedEntity.Col()
-					o.memoEntity = o.pointedEntity
+					if e, ok := o.pointedEntity.(screen.Positioner); ok {
+						o.mouseControlMode = MouseControlModeMove
+						o.memoMouseRow = mouseParams.Row
+						o.memoMouseCol = mouseParams.Col
+						o.memoEntityRow = e.Row()
+						o.memoEntityCol = e.Col()
+						o.memoEntity = o.pointedEntity
+					}
 				}
 			}
 
 			if !o.mouseParams.ButtonSecondary && mouseParams.ButtonSecondary {
 				if o.pointedEntity != nil {
-					o.mouseControlMode = MouseControlModeResize
-					o.memoMouseRow = mouseParams.Row
-					o.memoMouseCol = mouseParams.Col
-					o.memoEntityHeight = o.pointedEntity.Height()
-					o.memoEntityWidth = o.pointedEntity.Width()
-					o.memoEntity = o.pointedEntity
+					if e, ok := o.pointedEntity.(screen.Sizer); ok {
+						o.mouseControlMode = MouseControlModeResize
+						o.memoMouseRow = mouseParams.Row
+						o.memoMouseCol = mouseParams.Col
+						o.memoEntityHeight = e.Height()
+						o.memoEntityWidth = e.Width()
+						o.memoEntity = o.pointedEntity
+					}
 				}
 			}
 
 		case MouseControlModeMove:
 			if mouseParams.ButtonPrimary {
 				if o.memoEntity != nil {
-					o.memoEntity.SetPosition(o.memoEntityRow+mouseParams.Row-o.memoMouseRow, o.memoEntityCol+mouseParams.Col-o.memoMouseCol)
+					if e, ok := o.memoEntity.(screen.Positioner); ok {
+						e.SetPosition(o.memoEntityRow+mouseParams.Row-o.memoMouseRow, o.memoEntityCol+mouseParams.Col-o.memoMouseCol)
+					}
 				}
 			} else {
 				o.mouseControlMode = MouseControlModeDefault
@@ -77,7 +85,9 @@ func (o *Engine) processMouse(mouseParams message.ParamsMouse) {
 		case MouseControlModeResize:
 			if mouseParams.ButtonSecondary {
 				if o.memoEntity != nil {
-					o.memoEntity.Resize(o.memoEntityHeight+mouseParams.Row-o.memoMouseRow, o.memoEntityWidth+mouseParams.Col-o.memoMouseCol)
+					if e, ok := o.memoEntity.(screen.Sizer); ok {
+						e.Resize(o.memoEntityHeight+mouseParams.Row-o.memoMouseRow, o.memoEntityWidth+mouseParams.Col-o.memoMouseCol)
+					}
 				}
 			} else {
 				o.mouseControlMode = MouseControlModeDefault
@@ -92,7 +102,7 @@ func (o *Engine) processMouse(mouseParams message.ParamsMouse) {
 		if o.mouseParams.Row != mouseParams.Row || o.mouseParams.Col != mouseParams.Col {
 			if mouseParams.ButtonPrimary {
 				if o.memoEntity != nil {
-					id := o.memoEntity.Id()
+					id := o.memoEntity.(property.IId).Id() // #directId
 					mouseParamsExt := message.ParamsMouseExt{ParamsMouse: mouseParams, DeltaRow: mouseParams.Row - o.memoMouseRow, DeltaCol: mouseParams.Col - o.memoMouseCol}
 					o.SendMessage(message.MessageIdMouseMove, mouseParamsExt, id)
 				}
@@ -121,21 +131,22 @@ func (o *Engine) processMouse(mouseParams message.ParamsMouse) {
 }
 
 func (o *Engine) processHoverChange(mouseParams message.ParamsMouse, sendMessages bool) {
-	x := o.getMetaUnderMousePosition(mouseParams)
-	if pointedEntity, ok := x.(ntt.IEntity); ok {
-		if o.pointedEntity != pointedEntity {
+	a := o.getMetaUnderMousePosition(mouseParams)
+	if pointedEntity, ok := a.(property.IMouse); ok {
+		if o.pointedEntity != a { // a instead of pointedEntity because we compare two anys
 			if o.pointedEntity != nil {
-				//o.pointedEntity.NextPointedEntity = pointedEntity
-				o.updateHoveredGroup(o.pointedEntity.Id(), false)
-				o.pointedEntity.SetHovered(false)
+				o.updateHoveredGroup(o.pointedEntity.(property.IId).Id(), false) // #directId
+				if e, ok := o.pointedEntity.(property.IMouse); ok {
+					e.SetHovered(false)
+				}
 				if sendMessages {
-					o.SendMessage(message.MessageIdMouseExit, mouseParams, o.pointedEntity.Id())
+					o.SendMessage(message.MessageIdMouseExit, mouseParams, o.pointedEntity.(property.IId).Id()) // #directId
 				}
 			}
-			o.updateHoveredGroup(pointedEntity.Id(), true)
+			o.updateHoveredGroup(pointedEntity.(property.IId).Id(), true)
 			pointedEntity.SetHovered(true)
 			if sendMessages {
-				o.SendMessage(message.MessageIdMouseEnter, mouseParams, pointedEntity.Id())
+				o.SendMessage(message.MessageIdMouseEnter, mouseParams, pointedEntity.(property.IId).Id()) // #directId
 			}
 			o.pointedEntity = pointedEntity
 		}
@@ -146,5 +157,9 @@ func (o *Engine) processHoverChange(mouseParams message.ParamsMouse, sendMessage
 
 func (o *Engine) updateHoveredGroup(id string, b bool) {
 	l := o.listOfEntityAndHisAscendants(id)
-	callFuncWithEachEntityOfTheList(l, func(n ntt.IEntity) { n.SetHoveredGroup(b) })
+	callFuncWithEachEntityOfTheList(l, func(a any) {
+		if e, ok := a.(property.IMouse); ok {
+			e.SetHoveredGroup(b)
+		}
+	})
 }

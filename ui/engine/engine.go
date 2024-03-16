@@ -25,7 +25,8 @@ type Engine struct {
 	*Screen
 	Entities
 	Actions
-	FocusedEntity ntt.IEntity
+	theme.ITheme
+	FocusedEntity any
 	EditMode      bool
 	screenHeight  int
 	screenWidth   int
@@ -44,7 +45,7 @@ type Engine struct {
 	OnKey
 	OnMouse
 	property.OnScreenResize
-	MinimizeVobj ntt.IEntity
+	MinimizeVobj any
 	Logger
 	beforeInputMessageProcessing func(message.InputMessage)
 }
@@ -54,9 +55,10 @@ func New(inputMessageChannel chan message.InputMessage, uiMessageChannel chan me
 		return nil, errors.New("the value of refreshIntervalInMilliseconds must be between 1 and 1000")
 	}
 	o := new(Engine)
+	o.ITheme = theme.NewTheme()
 	o.Logger = &NilLogger{}
 	o.Actions = NewActions()
-	o.Entities = make(map[string]ntt.IEntity)
+	o.Entities = make(map[string]any)
 	o.pointer = ntt.NewPointer()
 	o.initScreen()
 
@@ -76,21 +78,36 @@ func (o *Engine) SetFuncBeforeInputMessageProcessing(f func(message.InputMessage
 	o.beforeInputMessageProcessing = f
 }
 
-func (o *Engine) AddEntity(v ntt.IEntity, parent string) ntt.IEntity {
-	id := v.Id()
-	o.Entities[id] = v
-	// TODO move SetSendMessage to NewEntity?
-	v.SetSendMessage(func(messageId message.MessageId, messageParams interface{}, objId string) {
-		o.SendMessage(messageId, messageParams, objId)
-	})
-	v.SetParent(parent)
-	order := o.nextOrder(parent)
-	v.SetOrder(order)
-	v.SetFocusOrder(order)
-	if v.ZOrder() == 0 {
-		v.SetZOrder(order)
+func (o *Engine) AddEntity(a any, parent string) any {
+	id := a.(property.IId).Id() // An entity must at least have an Id, otherwize this make the program crash.  #directId
+	o.Entities[id] = a
+
+	if e, ok := a.(property.IParent); ok {
+		e.SetParent(parent)
 	}
-	return v
+
+	if e, ok := a.(message.IMessageSender); ok {
+		e.SetSendMessage(func(messageId message.MessageId, messageParams interface{}, objId string) {
+			o.SendMessage(messageId, messageParams, objId)
+		})
+	}
+
+	order := o.nextOrder(parent)
+
+	if e, ok := a.(property.IOrder); ok {
+		e.SetOrder(order)
+	}
+
+	if e, ok := a.(property.IFocus); ok {
+		e.SetFocusOrder(order)
+	}
+
+	if e, ok := a.(property.IZOrder); ok {
+		if e.ZOrder() == 0 {
+			e.SetZOrder(order)
+		}
+	}
+	return a
 }
 
 func (o *Engine) GetRefreshCounters() (int, int) {
@@ -187,20 +204,24 @@ func (o *Engine) processUiMessages() {
 
 		case message.MessageIdMove:
 			if params, ok := m.Params.(message.ParamsMove); ok {
-				if n, ok := o.GetEntityById(m.ObjId); ok {
-					if n.CanMove() {
-						currentPosition := n.GetPosition()
-						n.SetPosition(currentPosition.Row+params.Rows, currentPosition.Col+params.Cols)
-						o.Refresh()
+				if a, ok := o.GetEntityById(m.ObjId); ok {
+					if e, ok := a.(screen.Positioner); ok {
+						if e.CanMove() {
+							currentPosition := e.GetPosition()
+							e.SetPosition(currentPosition.Row+params.Rows, currentPosition.Col+params.Cols)
+							o.Refresh()
+						}
 					}
 				}
 			}
 
 		case message.MessageIdResize:
 			if params, ok := m.Params.(message.ParamsResize); ok {
-				if n, ok := o.GetEntityById(m.ObjId); ok {
-					n.Resize(params.Rows, params.Cols)
-					o.Refresh()
+				if a, ok := o.GetEntityById(m.ObjId); ok {
+					if e, ok := a.(screen.SizeSetter); ok {
+						e.Resize(params.Rows, params.Cols)
+						o.Refresh()
+					}
 				}
 			}
 
@@ -236,27 +257,34 @@ func (o *Engine) processUiMessages() {
 			o.ZOrderToBottom(m.ObjId)
 			o.Refresh()
 
-		case message.MessageIdMinimize:
-			if e, ok := o.GetEntityById(m.ObjId); ok {
-				if p, ok := e.(ntt.Paneler); ok {
-					p.Minimize(o.MinimizeVobj)
+		/*
+			case message.MessageIdMinimize:
+				if e, ok := o.GetEntityById(m.ObjId); ok {
+					if p, ok := e.(ntt.Paneler); ok {
+						p.Minimize(o.MinimizeVobj)
+					}
 				}
-			}
 
-		case message.MessageIdRestoreSize:
-			if e, ok := o.GetEntityById(m.ObjId); ok {
-				if p, ok := e.(ntt.Paneler); ok {
-					p.RestoreSize()
+			case message.MessageIdRestoreSize:
+				if e, ok := o.GetEntityById(m.ObjId); ok {
+					if p, ok := e.(ntt.Paneler); ok {
+						p.RestoreSize()
+					}
 				}
-			}
-
+		*/ // #minimizer
 		default:
-			if v, ok := o.GetEntityById(m.ObjId); ok {
-				v.ProcessMessage(m.MessageId, m.Params)
+			if a, ok := o.GetEntityById(m.ObjId); ok {
+				if e, ok := a.(message.IMessageListener); ok {
+					e.ProcessMessage(m.MessageId, m.Params)
+				}
 			}
 		}
 	}
 	o.Stop()
+}
+
+func (o *Engine) GetTheme() theme.ITheme {
+	return o.ITheme
 }
 
 /*

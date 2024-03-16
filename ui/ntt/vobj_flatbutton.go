@@ -9,35 +9,33 @@ import (
 )
 
 type FlatButton struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	property.PropertyText
 	property.OnSelect
 }
 
 func NewFlatButton(id string, row, col int, height, width int, label string, syst ISystem) *FlatButton {
 	o := new(FlatButton)
-	o.IEntity = NewEntity(id, height, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED, theme.STYLE_BUTTON_DOWN)
+	o.IWidget = NewWidget(id, height, width, syst)
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
 	o.SetFocusable(true)
 	o.SetText(label)
 
 	//SetDefaultFuncFor_OnFocus_And_OnLostFocus(o)
-	o.SetOnFocus(func(foc property.IFocus) {
+	o.SetOnFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), true)
 	})
 
-	o.SetOnLostFocus(func(foc property.IFocus) {
+	o.SetOnLostFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), false)
 	})
 
 	o.SetOnDraw(func() {
 		// TODO to improve
-		style := ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED)
+		style := ClearWithStyle(o, o.IWidget, theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED)
 		if o.Selected() {
-			style = ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN)
+			style = ClearWithStyle(o, o.IWidget, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN)
 		}
 		screenutils.DrawStyledString(0, 0, o.Text(), o, style, theme.ToColor)
 	})
@@ -47,14 +45,14 @@ func NewFlatButton(id string, row, col int, height, width int, label string, sys
 	})
 
 	unselectGroup := func(group int) {
-		f := func(i interface{}) {
+		f := func(i any) {
 			if e, ok := i.(property.Selecter); ok {
 				if e.GetSelectGroup() == group {
 					e.Unselect()
 				}
 			}
 		}
-		syst.CallFuncWithAllEntitiesAsInterface(f)
+		syst.CallFuncWithAllEntities(f)
 	}
 
 	o.SetListener(message.MessageIdMouseDown, func(messageParams interface{}) bool {

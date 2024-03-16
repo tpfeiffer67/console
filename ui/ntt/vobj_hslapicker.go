@@ -11,8 +11,7 @@ import (
 )
 
 type HSLAPicker struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	huePos      int
 	satPos      int
 	lumPos      int
@@ -49,9 +48,7 @@ func (o *HSLAPicker) HSLA() (uint8, uint8, uint8, uint8) {
 
 func NewHSLAPicker(id string, row, col int, widthInChar int, syst ISystem) *HSLAPicker {
 	o := newHSLAPicker(widthInChar)
-	o.IEntity = NewEntity(id, 9, widthInChar+2, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_TRACKBAR, theme.STYLE_TRACKBAR_HOVERED, theme.STYLE_TRACKBAR_FOCUSED, theme.STYLE_TRACKBAR_FOCUSEDHOVERED, theme.TRACKBAR_BACKGROUND, theme.TRACKBAR_CURSOR)
-
+	o.IWidget = NewWidget(id, 9, widthInChar+2, syst)
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
 	o.SetFocusable(true)

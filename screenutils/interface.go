@@ -12,3 +12,8 @@ type ICanvas interface {
 	GetStencil() *screen.Stencil
 	GetOrigins() screen.Coordinates
 }
+
+type IHasRuneCanvas interface {
+	GetRuneCanvas() *screen.RuneCanvas
+	Clear()
+}

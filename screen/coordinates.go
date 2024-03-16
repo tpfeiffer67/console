@@ -9,6 +9,20 @@ type Coordinates struct {
 	Col int
 }
 
+type IPosition interface {
+	GetPosition() Coordinates
+	Row() int
+	Col() int
+	SetRow(row int)
+	SetCol(col int)
+	SetPosition(row, col int)
+	MoveRow(rows int)
+	MoveCol(cols int)
+	Move(rows, cols int)
+	CanMove() bool
+	SetCanMove(v bool)
+}
+
 type Position struct {
 	coordinates Coordinates
 	canMove     bool

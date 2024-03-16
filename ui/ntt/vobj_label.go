@@ -7,23 +7,21 @@ import (
 )
 
 type Label struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	property.PropertyText
 }
 
 func NewLabel(id string, row, col int, label string, syst ISystem) *Label {
 	width := screenutils.GetStyledStringLen(label)
 	o := new(Label)
-	o.IEntity = NewEntity(id, 1, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_LABEL)
+	o.IWidget = NewWidget(id, 1, width, syst)
 	o.SetOnTextChange(o.update)
 	o.SetText(label)
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
 
 	o.SetOnDraw(func() {
-		style, _ := o.ITheme.GetStyle(theme.STYLE_LABEL)
+		style, _ := o.GetStyle(theme.STYLE_LABEL)
 		o.SetDefaults(' ', style)
 		o.Clear()
 		screenutils.DrawStyledString(0, 0, o.Text(), o, style, theme.ToColor)

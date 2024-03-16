@@ -2,7 +2,7 @@ package engine
 
 import (
 	"github.com/tpfeiffer67/console/ui/message"
-	"github.com/tpfeiffer67/console/ui/ntt"
+	"github.com/tpfeiffer67/console/ui/property"
 )
 
 func (o *Engine) SendMessage(messageId message.MessageId, messageParams interface{}, objId string) {
@@ -15,12 +15,12 @@ func (o *Engine) getMetaUnderMousePosition(mouseParams message.ParamsMouse) inte
 
 func (o *Engine) GetPointedObjectId() (string, bool) {
 	if o.pointedEntity != nil {
-		return o.pointedEntity.Id(), true
+		return o.pointedEntity.(property.IId).Id(), true // #directId
 	}
 	return "", false
 }
 
-func (o *Engine) GetPointedObject() (ntt.IEntity, bool) {
+func (o *Engine) GetPointedObject() (any, bool) {
 	if o.pointedEntity != nil {
 		return o.pointedEntity, true
 	}

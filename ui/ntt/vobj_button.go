@@ -9,32 +9,30 @@ import (
 )
 
 type Button struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	property.PropertyText
 	down bool
 }
 
 func NewButton(id string, row, col int, height, width int, label string, syst ISystem) *Button {
 	o := new(Button)
-	o.IEntity = NewEntity(id, height, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED, theme.BUTTON_FRAME, theme.SHADOW_ENABLED, theme.SHADOW_VALUE, theme.SHADOW_VERTICAL_OFFSET, theme.SHADOW_HORIZONTAL_OFFSET)
+	o.IWidget = NewWidget(id, height, width, syst)
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
 	o.SetFocusable(true)
 	o.SetText(label)
 
 	//SetDefaultFuncFor_OnFocus_And_OnLostFocus(o)
-	o.SetOnFocus(func(foc property.IFocus) {
+	o.SetOnFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), true)
 	})
 
-	o.SetOnLostFocus(func(foc property.IFocus) {
+	o.SetOnLostFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), false)
 	})
 
 	o.SetOnDraw(func() {
-		style := ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED)
+		style := ClearWithStyle(o, o.IWidget, theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED)
 		frame, _ := o.GetInt(theme.BUTTON_FRAME)
 		screenutils.DrawFrame(o.GetRuneCanvas(), 0, 0, o.Height(), o.Width(), frame)
 		screenutils.DrawStyledString(1, 1, o.Text(), o, style, theme.ToColor)
@@ -43,7 +41,7 @@ func NewButton(id string, row, col int, height, width int, label string, syst IS
 	o.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
 		// TODO test Visible
 		if !o.down {
-			DrawShadowAccordingToTheTheme(sb, o.GetStencil(), pos, o)
+			DrawShadowAccordingToTheTheme(sb, o.GetStencil(), pos, o.IWidget)
 			o.Render(sb, pos)
 			return
 		}

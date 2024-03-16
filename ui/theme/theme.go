@@ -9,37 +9,48 @@ import (
 
 type ITheme interface {
 	IValuesMap
-	UpdateTheme(ValuesMap)
-	AppendValues(valuesId ...string)
-	ValuesId() []string
+	//	UpdateTheme(ValuesMap)
+	//	AppendValues(valuesId ...string)
+	//	ValuesId() []string // TODO rename in ValueIds
 }
 
 type Theme struct {
-	IValuesMap
-	valuesId []string
+	ITheme
+	//valuesId []string
 }
 
+/*
 func NewTheme(valuesId ...string) *Theme {
 	o := new(Theme)
 	o.valuesId = valuesId
 	o.UpdateTheme(CurrentTheme)
 	return o
+}*/
+
+// TODO add method to change theme
+func NewTheme() *Theme {
+	o := new(Theme)
+	o.ITheme = CurrentTheme
+	//	o.valuesId = valuesId
+	//	o.UpdateTheme(CurrentTheme)
+	return o
 }
 
-func (o *Theme) AppendValues(valuesId ...string) {
-	o.valuesId = append(o.valuesId, valuesId...)
-	o.UpdateTheme(CurrentTheme)
-}
+/*
+	func (o *Theme) AppendValues(valuesId ...string) {
+		o.valuesId = append(o.valuesId, valuesId...)
+		o.UpdateTheme(CurrentTheme)
+	}
 
-func (o *Theme) UpdateTheme(sourceTheme ValuesMap) {
-	o.IValuesMap = make(ValuesMap)
-	o.CopyFrom(sourceTheme, o.valuesId...)
-}
+	func (o *Theme) UpdateTheme(sourceTheme ValuesMap) {
+		o.IValuesMap = make(ValuesMap)
+		o.CopyFrom(sourceTheme, o.valuesId...)
+	}
 
-func (o *Theme) ValuesId() []string {
-	return o.valuesId
-}
-
+	func (o *Theme) ValuesId() []string {
+		return o.valuesId
+	}
+*/
 var CurrentTheme ValuesMap
 
 func init() {

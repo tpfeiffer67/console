@@ -1,5 +1,6 @@
 package ntt
 
+/*
 type SizeManager interface {
 	SizeStatus() SizeStatus
 	SetSizeStatus(SizeStatus)
@@ -30,3 +31,4 @@ func (o *SizeManagement) MemorizeNormalStatus(r, c, h, w int, p string) {
 func (o *SizeManagement) GetMemorizedNormalStatus() (int, int, int, int, string) {
 	return o.memoRow, o.memoCol, o.memoHeight, o.memoWidth, o.memoParent
 }
+*/

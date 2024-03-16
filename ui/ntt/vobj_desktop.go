@@ -5,8 +5,7 @@ import (
 )
 
 type Desktop struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	Background rune
 }
 
@@ -14,8 +13,7 @@ type Desktop struct {
 
 func NewDesktop(id string, height, width int, syst ISystem) *Desktop {
 	o := new(Desktop)
-	o.IEntity = NewEntity(id, height, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_DESKTOP, theme.DESKTOP_BACKGROUND)
+	o.IWidget = NewWidget(id, height, width, syst)
 	o.SetZOrderLayer(-1000)
 	o.SetZOrder(1)
 	o.SetCanHide(false)

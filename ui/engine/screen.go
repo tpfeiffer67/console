@@ -2,7 +2,7 @@ package engine
 
 import (
 	"github.com/tpfeiffer67/console/screen"
-	"github.com/tpfeiffer67/console/ui/ntt"
+	"github.com/tpfeiffer67/console/ui/property"
 )
 
 type Screen struct {
@@ -43,8 +43,10 @@ func (o *Engine) updateScreenSize(height, width int) {
 }
 
 func (o *Engine) processObjectsInTreeAfterScreenResized(height, width int) {
-	f := func(e ntt.IEntity) {
-		e.DoOnScreenResize(height, width)
+	f := func(a any) {
+		if e, ok := a.(property.IOnScreenResize); ok {
+			e.DoOnScreenResize(height, width)
+		}
 	}
-	o.callFuncWithAllEntities(f)
+	o.CallFuncWithAllEntities(f)
 }

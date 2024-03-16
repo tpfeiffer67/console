@@ -25,17 +25,19 @@ func NewShadow(id string, row, col int, stencil *screen.Stencil) *Shadow {
 
 func (o *Shadow) Render(sb *screen.Buffer, pos screen.Coordinates) {
 	if o.Visible {
-		o.ChromaticFilter.Render(sb, o.Stencil, pos, screen.Coordinates{0, 0})
+		o.ChromaticFilter.Render(sb, o.Stencil, pos, screen.Coordinates{})
 	}
 }
 
 // TODO Replace shadowValue by color. So it will be possible to have colored shadow.
 func DrawShadowAccordingToTheTheme(screenbuffer *screen.Buffer, stencil *screen.Stencil, position screen.Coordinates, ntt theme.ITheme) {
+	/* #minimizer
 	if p, ok := ntt.(Paneler); ok {
 		if p.SizeStatus() != SizeStatusNormal {
 			return
 		}
 	}
+	*/
 	b, _ := ntt.GetBool(theme.SHADOW_ENABLED)
 	if b {
 		shadowVOffset, _ := ntt.GetInt(theme.SHADOW_VERTICAL_OFFSET)

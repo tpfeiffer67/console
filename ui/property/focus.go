@@ -2,17 +2,17 @@ package property
 
 type IFocus interface {
 	Focused() bool
-	SetFocused(bool, IFocus)
+	SetFocused(bool, any)
 	FocusedGroup() bool
 	SetFocusedGroup(b bool)
 	Focusable() bool
 	SetFocusable(bool)
 	FocusOrder() int
 	SetFocusOrder(int)
-	SetOnFocus(func(IFocus))
-	DoOnFocus(IFocus)
-	SetOnLostFocus(func(IFocus))
-	DoOnLostFocus(IFocus)
+	SetOnFocus(func(any))
+	DoOnFocus(any)
+	SetOnLostFocus(func(any))
+	DoOnLostFocus(any)
 	SetOnFocusGroup(func())
 	DoOnFocusGroup()
 	SetOnLostFocusGroup(func())
@@ -24,14 +24,14 @@ type Focus struct {
 	focusedGroup     bool
 	focusable        bool
 	focusOrder       int
-	onFocus          func(IFocus)
-	onLostFocus      func(IFocus)
+	onFocus          func(any)
+	onLostFocus      func(any)
 	onFocusGroup     func()
 	onLostFocusGroup func()
 }
 
 func (o *Focus) Focused() bool { return o.focused }
-func (o *Focus) SetFocused(b bool, foc IFocus) {
+func (o *Focus) SetFocused(b bool, foc any) {
 	if !o.Focusable() && b {
 		return
 	}
@@ -68,17 +68,17 @@ func (o *Focus) SetFocusable(b bool) { o.focusable = b }
 func (o *Focus) FocusOrder() int     { return o.focusOrder }
 func (o *Focus) SetFocusOrder(i int) { o.focusOrder = i }
 
-func (o *Focus) SetOnFocus(f func(IFocus)) { o.onFocus = f }
-func (o *Focus) DoOnFocus(previousIFocus IFocus) {
+func (o *Focus) SetOnFocus(f func(any)) { o.onFocus = f }
+func (o *Focus) DoOnFocus(previous any) {
 	if o.onFocus != nil {
-		o.onFocus(previousIFocus)
+		o.onFocus(previous)
 	}
 }
 
-func (o *Focus) SetOnLostFocus(f func(IFocus)) { o.onLostFocus = f }
-func (o *Focus) DoOnLostFocus(nextIFocus IFocus) {
+func (o *Focus) SetOnLostFocus(f func(any)) { o.onLostFocus = f }
+func (o *Focus) DoOnLostFocus(next any) {
 	if o.onLostFocus != nil {
-		o.onLostFocus(nextIFocus)
+		o.onLostFocus(next)
 	}
 }
 

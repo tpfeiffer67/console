@@ -2,6 +2,8 @@ package ntt
 
 import (
 	"github.com/tpfeiffer67/console/screen"
+	"github.com/tpfeiffer67/console/screenutils"
+	"github.com/tpfeiffer67/console/ui/property"
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
@@ -17,34 +19,43 @@ func SetDefaultFuncFor_OnFocus_And_OnLostFocus(o IEntity) {
 }
 */
 
-// TODO Combine IEntity and IValuesMap
-func ForEntity_GetStyleByItsStatus_AndClear(o IEntity, vm theme.IValuesMap, normal, hovered, focused, focusedhovered string) screen.Style {
-	style := ForEntity_GetStyleByItsStatus(o, vm, normal, hovered, focused, focusedhovered)
-	o.SetDefaults(' ', style)
-	o.Clear()
+func ClearWithStyle(a any, vm theme.IValuesMap, normal, hovered, focused, focusedhovered string) screen.Style {
+	style := GetStyleByStatus(a, vm, normal, hovered, focused, focusedhovered)
+	if e, ok := a.(screenutils.ICombosCanvas); ok {
+		e.SetDefaults(' ', style)
+		e.Clear()
+	}
 	return style
 }
 
-func ForEntity_GetStyleByItsStatus(o IEntity, vm theme.IValuesMap, normal, hovered, focused, focusedhovered string) screen.Style {
+type StatusStyler interface {
+	property.IFocus
+	property.IMouse
+}
+
+func GetStyleByStatus(a any, vm theme.IValuesMap, normal, hovered, focused, focusedhovered string) screen.Style {
 	style := func(name string) screen.Style {
 		st, _ := vm.GetStyleDef(name, screen.Style{})
 		return st
 	}
 
-	if o.FocusedGroup() {
-		if o.HoveredGroup() {
-			return style(focusedhovered)
+	if e, ok := a.(StatusStyler); ok {
+		if e.FocusedGroup() {
+			if e.HoveredGroup() {
+				return style(focusedhovered)
+			}
+			if e.Focused() {
+				s := style(focused)
+				// TODO modify to define a custom style, not just inverting
+				s.BColor, s.FColor = s.FColor, s.BColor
+				return s
+			}
+			return style(focused)
 		}
-		if o.Focused() {
-			s := style(focused)
-			// TODO modify
-			s.BColor, s.FColor = s.FColor, s.BColor
-			return s
+		if e.HoveredGroup() {
+			return style(hovered)
 		}
-		return style(focused)
 	}
-	if o.HoveredGroup() {
-		return style(hovered)
-	}
+
 	return style(normal)
 }

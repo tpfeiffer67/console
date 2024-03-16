@@ -3,6 +3,9 @@ package property
 type IId interface {
 	Id() string
 	SetId(string)
+}
+
+type IParent interface {
 	Parent() string
 	SetParent(string)
 }

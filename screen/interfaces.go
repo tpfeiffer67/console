@@ -79,3 +79,13 @@ type Positioner interface {
 	PositionGetter
 	PositionSetter
 }
+
+type SizeGetterAndPositionSetter interface {
+	SizeGetter
+	PositionSetter
+}
+
+type SizeSetterAndPositionSetter interface {
+	SizeSetter
+	PositionSetter
+}

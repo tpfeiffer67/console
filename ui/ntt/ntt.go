@@ -9,21 +9,24 @@ import (
 )
 
 type ISystem interface {
-	CallFuncWithAllEntitiesAsInterface(func(i interface{}))
-	CallFuncForEachChildrenEntity(string, func(IEntity))
-	GetFirstChildEntity(string) (IEntity, bool)
-	GetListOfChildren(string) []IEntity
-	GetListOfBrotherhood(string) []IEntity
+	CallFuncWithAllEntities(func(any))
+	CallFuncForEachChildrenEntity(string, func(any))
+	GetFirstChildEntity(string) (any, bool)
+	GetListOfChildren(string) []any
+	GetListOfBrotherhood(string) []any
 	SetFocusedGroupFromTheTopMostAncestorEntity(string, bool)
-	GetTheTopMostAncestorEntity(string) IEntity
-	Focus(IEntity) bool
+	GetTheTopMostAncestorEntity(string) any
+	Focus(any) bool
 	ZOrderToTop(string)
+	GetTheme() theme.ITheme
 }
 
-type IEntity interface {
+type IWidget interface {
 	screen.Sizer
+	theme.ITheme
 	screen.Positioner
 	property.IId
+	property.IParent
 	property.IVisible
 	property.IOrder
 	property.IZOrder
@@ -41,15 +44,10 @@ type IEntity interface {
 	Render(*screen.Buffer, screen.Coordinates)
 }
 
-type IEntityWithTheme interface {
-	IEntity
-	theme.ITheme
-}
-
-type Entity struct {
+type Widget struct {
 	ISystem
+	theme.ITheme
 	screen.Position
-	theme.Theme
 	property.PropertyId
 	property.PropertyVisible
 	property.PropertyOrder
@@ -67,8 +65,9 @@ type Entity struct {
 	*screenutils.ComboCanvas
 }
 
-func NewEntity(id string, height int, width int, syst ISystem) *Entity {
-	o := new(Entity)
+func NewWidget(id string, height int, width int, syst ISystem) *Widget {
+	o := new(Widget)
+	o.ITheme = syst.GetTheme()
 	o.SetId(id)
 	o.ISystem = syst
 	o.MessageListener = message.NewMessageListener()
@@ -80,7 +79,7 @@ func NewEntity(id string, height int, width int, syst ISystem) *Entity {
 	return o
 }
 
-func (o *Entity) Render(sb *screen.Buffer, pos screen.Coordinates) {
+func (o *Widget) Render(sb *screen.Buffer, pos screen.Coordinates) {
 	if o.Visible() {
 		sb.DefineMeta(o)
 		o.RuneCanvas.Render(sb, o.Stencil, pos, o.Origins)

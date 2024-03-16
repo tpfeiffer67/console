@@ -1,10 +1,10 @@
 package engine
 
 import (
-	"github.com/tpfeiffer67/console/ui/ntt"
+	"github.com/tpfeiffer67/console/ui/property"
 )
 
-func (o *Engine) GetFocusedEntity() (ntt.IEntity, bool) {
+func (o *Engine) GetFocusedEntity() (any, bool) {
 	if o.FocusedEntity != nil {
 		return o.FocusedEntity, true
 	}
@@ -13,7 +13,7 @@ func (o *Engine) GetFocusedEntity() (ntt.IEntity, bool) {
 
 func (o *Engine) GetFocusedEntityId() (string, bool) {
 	if o.FocusedEntity != nil {
-		return o.FocusedEntity.Id(), true
+		return o.FocusedEntity.(property.IId).Id(), true // #directId
 	}
 	return "", false
 }
@@ -25,15 +25,19 @@ func (o *Engine) FocusById(id string) bool {
 	return false
 }
 
-func (o *Engine) Focus(v ntt.IEntity) bool {
-	if v != nil {
-		if v.Focusable() {
-			if o.FocusedEntity != nil {
-				o.FocusedEntity.SetFocused(false, v)
+func (o *Engine) Focus(a any) bool {
+	if a != nil {
+		if e, ok := a.(property.IFocus); ok {
+			if e.Focusable() {
+				if o.FocusedEntity != nil {
+					if fe, ok := o.FocusedEntity.(property.IFocus); ok {
+						fe.SetFocused(false, e)
+					}
+				}
+				e.SetFocused(true, o.FocusedEntity)
+				o.FocusedEntity = e
+				return true
 			}
-			v.SetFocused(true, o.FocusedEntity)
-			o.FocusedEntity = v
-			return true
 		}
 	}
 	return false
@@ -41,12 +45,19 @@ func (o *Engine) Focus(v ntt.IEntity) bool {
 
 func (o *Engine) SetFocusedGroupFromTheTopMostAncestorEntity(id string, b bool) {
 	top := o.GetTheTopMostAncestorEntity(id)
-	o.CallFuncForEntityAndAllItsDescendants(top.Id(), func(n ntt.IEntity) { n.SetFocusedGroup(b) })
+	o.CallFuncForEntityAndAllItsDescendants(top.(property.IId).Id(), // #directId
+		func(a any) {
+			if e, ok := a.(property.IFocus); ok {
+				e.SetFocusedGroup(b)
+			}
+		})
 }
 
 func (o *Engine) FocusParent() bool {
 	if o.FocusedEntity != nil {
-		return o.FocusById(o.FocusedEntity.Parent())
+		if e, ok := o.FocusedEntity.(property.IParent); ok {
+			return o.FocusById(e.Parent())
+		}
 	}
 	return false
 }
@@ -64,13 +75,17 @@ func (o *Engine) FocusChild() bool {
 
 func (o *Engine) FocusNext() bool {
 	if o.FocusedEntity != nil {
-		currentFocusOrder := o.FocusedEntity.FocusOrder()
-		p := o.FocusedEntity.Parent()
-		l := o.listEntities_WhoseParentIsId_AndWhichAreVisible_AndWhichAreFocusable(p)
-		l = sortEntitiesByFocusOrder(l)
-		for _, v := range l {
-			if v.FocusOrder() > currentFocusOrder {
-				return o.Focus(v)
+		if e, ok := o.FocusedEntity.(property.IParentVisibleFocusable); ok {
+			currentFocusOrder := e.FocusOrder()
+			p := e.Parent()
+			l := o.listEntities_WhoseParentIsId_AndWhichAreVisible_AndWhichAreFocusable(p)
+			l = sortEntitiesByFocusOrder(l)
+			for _, a := range l {
+				if e, ok := a.(property.IFocus); ok {
+					if e.FocusOrder() > currentFocusOrder {
+						return o.Focus(e)
+					}
+				}
 			}
 		}
 	}
@@ -79,13 +94,17 @@ func (o *Engine) FocusNext() bool {
 
 func (o *Engine) FocusPrevious() bool {
 	if o.FocusedEntity != nil {
-		currentFocusOrder := o.FocusedEntity.FocusOrder()
-		p := o.FocusedEntity.Parent()
-		l := o.listEntities_WhoseParentIsId_AndWhichAreVisible_AndWhichAreFocusable(p)
-		l = sortEntitiesByReverseFocusOrder(l)
-		for _, v := range l {
-			if v.FocusOrder() < currentFocusOrder {
-				return o.Focus(v)
+		if e, ok := o.FocusedEntity.(property.IParentVisibleFocusable); ok {
+			currentFocusOrder := e.FocusOrder()
+			p := e.Parent()
+			l := o.listEntities_WhoseParentIsId_AndWhichAreVisible_AndWhichAreFocusable(p)
+			l = sortEntitiesByReverseFocusOrder(l)
+			for _, a := range l {
+				if e, ok := a.(property.IFocus); ok {
+					if e.FocusOrder() < currentFocusOrder {
+						return o.Focus(e)
+					}
+				}
 			}
 		}
 	}

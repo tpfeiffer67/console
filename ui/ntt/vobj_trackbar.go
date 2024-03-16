@@ -3,15 +3,13 @@ package ntt
 import (
 	"github.com/tpfeiffer67/console/screenutils"
 	"github.com/tpfeiffer67/console/ui/message"
-	"github.com/tpfeiffer67/console/ui/property"
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
 const MAX_TRACKBAR_WIDTH = 1000
 
 type TrackBar struct {
-	IEntity
-	theme.ITheme
+	IWidget
 	max      int
 	position int
 	onChange func(int)
@@ -24,25 +22,24 @@ func NewTrackBar(id string, row, col int, max int, syst ISystem) *TrackBar {
 	width := max + 1
 	o := new(TrackBar)
 	o.max = max
-	o.IEntity = NewEntity(id, 1, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_TRACKBAR, theme.STYLE_TRACKBAR_HOVERED, theme.STYLE_TRACKBAR_FOCUSED, theme.STYLE_TRACKBAR_FOCUSEDHOVERED, theme.TRACKBAR_BACKGROUND, theme.TRACKBAR_CURSOR)
+	o.IWidget = NewWidget(id, 1, width, syst)
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
 	o.SetFocusable(true)
 
 	//SetDefaultFuncFor_OnFocus_And_OnLostFocus(o)
-	o.SetOnFocus(func(foc property.IFocus) {
+	o.SetOnFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), true)
 	})
 
-	o.SetOnLostFocus(func(foc property.IFocus) {
+	o.SetOnLostFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), false)
 	})
 
 	o.SetOnDraw(func() {
-		background, _ := o.ITheme.GetChar(theme.TRACKBAR_BACKGROUND)
-		cursor, _ := o.ITheme.GetChar(theme.TRACKBAR_CURSOR)
-		style := ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_TRACKBAR, theme.STYLE_TRACKBAR_HOVERED, theme.STYLE_TRACKBAR_FOCUSED, theme.STYLE_TRACKBAR_FOCUSEDHOVERED)
+		background, _ := o.GetChar(theme.TRACKBAR_BACKGROUND)
+		cursor, _ := o.GetChar(theme.TRACKBAR_CURSOR)
+		style := ClearWithStyle(o, o.IWidget, theme.STYLE_TRACKBAR, theme.STYLE_TRACKBAR_HOVERED, theme.STYLE_TRACKBAR_FOCUSED, theme.STYLE_TRACKBAR_FOCUSEDHOVERED)
 		screenutils.DrawHorizontalLine(o.GetRuneCanvas(), o.GetFColorCanvas(), o.GetBColorCanvas(), 0, 0, width, background, style.FColor, style.BColor)
 		o.GetRuneCanvas().SetRune(0, o.position, cursor)
 	})

@@ -8,18 +8,18 @@ import (
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
-type Paneler interface {
-	IEntity
-	theme.ITheme
-	SizeManager
-	Minimize(IEntity)
-	RestoreSize()
-}
-
+/*
+	type Paneler interface {
+		IWidget
+		theme.ITheme
+		//SizeManager
+		Minimize(any)
+		RestoreSize()
+	}
+*/
 type Panel struct {
-	IEntity
-	theme.ITheme
-	SizeManager
+	IWidget
+	//SizeManager
 	ISystem
 }
 
@@ -28,9 +28,8 @@ func NewPanel(id string, row, col int, height, width int, syst ISystem) *Panel {
 	clickWidth := 0
 	*/
 	o := new(Panel)
-	o.IEntity = NewEntity(id, height, width, syst)
-	o.ITheme = theme.NewTheme(theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED, theme.MINIMIZING_CLICK_WIDTH)
-	o.SizeManager = new(SizeManagement)
+	o.IWidget = NewWidget(id, height, width, syst)
+	//o.SizeManager = new(SizeManagement) #minimizer
 	o.ISystem = syst
 
 	o.SetPosition(row, col)
@@ -38,11 +37,11 @@ func NewPanel(id string, row, col int, height, width int, syst ISystem) *Panel {
 	o.SetFocusable(true)
 
 	//SetDefaultFuncFor_OnFocus_And_OnLostFocus(o)
-	o.SetOnFocus(func(foc property.IFocus) {
+	o.SetOnFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), true)
 	})
 
-	o.SetOnLostFocus(func(foc property.IFocus) {
+	o.SetOnLostFocus(func(foc any) {
 		syst.SetFocusedGroupFromTheTopMostAncestorEntity(o.Id(), false)
 	})
 
@@ -51,7 +50,7 @@ func NewPanel(id string, row, col int, height, width int, syst ISystem) *Panel {
 	})
 
 	o.SetOnDraw(func() {
-		ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED)
+		ClearWithStyle(o, o.IWidget, theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED)
 	})
 
 	/* #minimize
@@ -76,10 +75,10 @@ func NewPanel(id string, row, col int, height, width int, syst ISystem) *Panel {
 		mouseResizeHeightMode = false
 		mouseResizeWidthMode = false
 		if params, ok := messageParams.(message.ParamsMouse); ok {
-			if o.SizeStatus() == SizeStatusMinimized {
+			/*if o.SizeStatus() == SizeStatusMinimized {
 				o.SendMessage(message.MessageIdRestoreSize, nil, o.Id())
 				return true
-			}
+			} */ //#minimizer
 
 			relativeRow := params.Row - o.Row() // TODO fix bug when minimized
 			relativeCol := params.Col - o.Col()
@@ -149,18 +148,17 @@ func NewPanelWithShadow(id string, row, col int, height, width int, syst ISystem
 }
 
 type FramePanel struct {
-	Paneler
+	*Panel
 	property.PropertyText
 }
 
 func NewFramePanel(id string, row, col int, height, width int, title string, syst ISystem) *FramePanel {
 	o := new(FramePanel)
-	o.Paneler = NewPanel(id, row, col, height, width, syst)
-	o.AppendValues(theme.PANEL_FRAME)
+	o.Panel = NewPanel(id, row, col, height, width, syst)
 	o.SetText(title)
 
 	o.SetOnDraw(func() {
-		style := ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED)
+		style := ClearWithStyle(o, o.IWidget, theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED)
 		frame, _ := o.GetInt(theme.PANEL_FRAME)
 		screenutils.DrawFrame(o.GetRuneCanvas(), 0, 0, o.Height(), o.Width(), frame)
 		// TODO No magic number, put row et col (0, 2) into theme
@@ -185,134 +183,160 @@ func NewColorGradientPanel(id string, row, col int, height, width int, topleft, 
 	return o
 }
 
-func AddShadow(e IEntityWithTheme) {
-	e.AppendValues(theme.SHADOW_ENABLED, theme.SHADOW_VALUE, theme.SHADOW_VERTICAL_OFFSET, theme.SHADOW_HORIZONTAL_OFFSET)
-	f := e.GetOnRender()
-	e.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
-		DrawShadowAccordingToTheTheme(sb, e.GetStencil(), pos, e)
-		f(sb, pos)
-	})
+type IShadowable interface {
+	property.IOnRender
+	screenutils.IStencil
+	theme.ITheme
 }
 
-func AddFrame(o IEntityWithTheme) {
-	o.AppendValues(theme.PANEL_FRAME)
-	o.SetOnDraw(func() {
-		ForEntity_GetStyleByItsStatus_AndClear(o, o, theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED)
-		frame, _ := o.GetInt(theme.PANEL_FRAME)
-		screenutils.DrawFrame(o.GetRuneCanvas(), 0, 0, o.Height(), o.Width(), frame)
-	})
+func AddShadow(a any) {
+	/*
+		var thme theme.ITheme
+		if thme, ok := a.(theme.ITheme); ok {
+			thme.AppendValues(theme.SHADOW_ENABLED, theme.SHADOW_VALUE, theme.SHADOW_VERTICAL_OFFSET, theme.SHADOW_HORIZONTAL_OFFSET)
+		}*/
+	if e, ok := a.(IShadowable); ok {
+		f := e.GetOnRender()
+		e.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
+			DrawShadowAccordingToTheTheme(sb, e.GetStencil(), pos, e)
+			f(sb, pos)
+		})
+	}
 }
 
-type ColorFilter struct {
-	IEntity
-	ISystem
+type IFramable interface {
+	screen.SizeGetter
+	screenutils.IHasRuneCanvas
+	property.IOnDraw
+	theme.ITheme
 }
 
-func (o *ColorFilter) SetColor(c screen.Color) {
-	o.GetFColorCanvas().DefaultValue = c
-	o.GetBColorCanvas().DefaultValue = c
-	o.Clear()
+// TODO review this method "SetOnDraw" to add a frame
+func AddFrame(a any) {
+	if e, ok := a.(IFramable); ok {
+		e.SetOnDraw(func() {
+			ClearWithStyle(a, e, theme.STYLE_PANEL, theme.STYLE_PANEL_HOVERED, theme.STYLE_PANEL_FOCUSED, theme.STYLE_PANEL_FOCUSEDHOVERED)
+			frame, _ := e.GetInt(theme.PANEL_FRAME)
+			screenutils.DrawFrame(e.GetRuneCanvas(), 0, 0, e.Height(), e.Width(), frame)
+		})
+	}
 }
 
-func NewColorFilter(id string, row, col int, height, width int, c screen.Color, syst ISystem) *ColorFilter {
-	o := new(ColorFilter)
-	o.IEntity = NewEntity(id, height, width, syst)
-	o.ISystem = syst
+/*
+	type ColorFilter struct {
+		IEntity
+		ISystem
+	}
 
-	o.SetPosition(row, col)
-	o.SetCanMove(true)
-	o.SetFocusable(true)
+	func (o *ColorFilter) SetColor(c screen.Color) {
+		o.GetFColorCanvas().DefaultValue = c
+		o.GetBColorCanvas().DefaultValue = c
+		o.Clear()
+	}
 
-	o.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
-		o.Render(sb, pos)
-	})
+	func NewColorFilter(id string, row, col int, height, width int, c screen.Color, syst ISystem) *ColorFilter {
+		o := new(ColorFilter)
+		o.IEntity = NewEntity(id, height, width, syst)
+		o.ISystem = syst
 
-	// TODO Factorisation with NewPanel (all SetListener)
-	o.SetListener(message.MessageIdMouseClick, func(messageParams interface{}) bool {
-		o.SendMessage(message.MessageIdZOrderTop, nil, id)
-		o.SendMessage(message.MessageIdFocus, nil, id)
-		return true
-	})
+		o.SetPosition(row, col)
+		o.SetCanMove(true)
+		o.SetFocusable(true)
 
-	mouseResizeHeightMode := false
-	mouseResizeWidthMode := false
-	o.SetListener(message.MessageIdMouseDown, func(messageParams interface{}) bool {
-		o.ZOrderToTop(o.Id())
-		mouseResizeHeightMode = false
-		mouseResizeWidthMode = false
-		if params, ok := messageParams.(message.ParamsMouse); ok {
-			relativeRow := params.Row - o.Row()
-			relativeCol := params.Col - o.Col()
-			if relativeRow == o.Height()-1 {
-				mouseResizeHeightMode = true
-			}
-			if relativeCol == o.Width()-1 {
-				mouseResizeWidthMode = true
-			}
+		o.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
+			o.Render(sb, pos)
+		})
+
+		// TODO Factorisation with NewPanel (all SetListener)
+		o.SetListener(message.MessageIdMouseClick, func(messageParams interface{}) bool {
+			o.SendMessage(message.MessageIdZOrderTop, nil, id)
+			o.SendMessage(message.MessageIdFocus, nil, id)
 			return true
-		}
-		return true
-	})
+		})
 
-	o.SetListener(message.MessageIdMouseMove, func(messageParams interface{}) bool {
-		if params, ok := messageParams.(message.ParamsMouseExt); ok {
-			if !mouseResizeHeightMode && !mouseResizeWidthMode {
-				o.SendMessage(message.MessageIdMove, message.ParamsMove{Rows: params.DeltaRow, Cols: params.DeltaCol}, o.Id())
+		mouseResizeHeightMode := false
+		mouseResizeWidthMode := false
+		o.SetListener(message.MessageIdMouseDown, func(messageParams interface{}) bool {
+			o.ZOrderToTop(o.Id())
+			mouseResizeHeightMode = false
+			mouseResizeWidthMode = false
+			if params, ok := messageParams.(message.ParamsMouse); ok {
+				relativeRow := params.Row - o.Row()
+				relativeCol := params.Col - o.Col()
+				if relativeRow == o.Height()-1 {
+					mouseResizeHeightMode = true
+				}
+				if relativeCol == o.Width()-1 {
+					mouseResizeWidthMode = true
+				}
 				return true
 			}
-			h := o.Height()
-			w := o.Width()
-			if mouseResizeHeightMode {
-				if params.Row > o.Row() {
-					h = params.Row - o.Row() + 1
+			return true
+		})
+
+		o.SetListener(message.MessageIdMouseMove, func(messageParams interface{}) bool {
+			if params, ok := messageParams.(message.ParamsMouseExt); ok {
+				if !mouseResizeHeightMode && !mouseResizeWidthMode {
+					o.SendMessage(message.MessageIdMove, message.ParamsMove{Rows: params.DeltaRow, Cols: params.DeltaCol}, o.Id())
+					return true
 				}
-			}
-			if mouseResizeWidthMode {
-				if params.Col > o.Col() {
-					w = params.Col - o.Col() + 1
+				h := o.Height()
+				w := o.Width()
+				if mouseResizeHeightMode {
+					if params.Row > o.Row() {
+						h = params.Row - o.Row() + 1
+					}
 				}
+				if mouseResizeWidthMode {
+					if params.Col > o.Col() {
+						w = params.Col - o.Col() + 1
+					}
+				}
+
+				o.SendMessage(message.MessageIdResize, message.ParamsResize{Rows: h, Cols: w}, o.Id())
 			}
+			return true
+		})
 
-			o.SendMessage(message.MessageIdResize, message.ParamsResize{Rows: h, Cols: w}, o.Id())
-		}
-		return true
-	})
+		o.SetColor(c)
 
-	o.SetColor(c)
+		o.SetOnDraw(func() {
+			o.GetFColorCanvas().Clear()
+			o.GetBColorCanvas().Clear()
+		})
 
-	o.SetOnDraw(func() {
-		o.GetFColorCanvas().Clear()
-		o.GetBColorCanvas().Clear()
-	})
+		o.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
+			if o.Visible() {
+				sb.DefineMeta(o)
+				o.GetFColorCanvas().Render(sb, o.GetStencil(), pos, screen.Coordinates{})
+				sb.ResetMeta()
+				o.GetBColorCanvas().Render(sb, o.GetStencil(), pos, screen.Coordinates{})
+			}
+		})
 
-	o.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
-		if o.Visible() {
-			sb.DefineMeta(o)
-			o.GetFColorCanvas().Render(sb, o.GetStencil(), pos, screen.Coordinates{})
-			sb.ResetMeta()
-			o.GetBColorCanvas().Render(sb, o.GetStencil(), pos, screen.Coordinates{})
-		}
-	})
-
-	return o
-}
-
-func (o *Panel) Minimize(e IEntity) {
-	if o.SizeStatus() != SizeStatusMinimized {
-		o.MemorizeNormalStatus(o.Row(), o.Col(), o.Height(), o.Width(), o.Parent())
-		o.SetSizeStatus(SizeStatusMinimized)
-		o.SetParent(e.Id())
-		e.SetVisible(true)
+		return o
 	}
+*/
+func (o *Panel) Minimize(a any) {
+	/*
+		if o.SizeStatus() != SizeStatusMinimized {
+			o.MemorizeNormalStatus(o.Row(), o.Col(), o.Height(), o.Width(), o.Parent())
+			o.SetSizeStatus(SizeStatusMinimized)
+			o.SetParent(e.Id())
+			e.SetVisible(true)
+		}
+	*/
 }
 
 func (o *Panel) RestoreSize() {
-	if o.SizeStatus() == SizeStatusMinimized {
-		r, c, h, w, p := o.GetMemorizedNormalStatus()
-		o.SetParent(p)
-		o.SetPosition(r, c)
-		o.Resize(h, w)
-		o.SetSizeStatus(SizeStatusNormal)
-		o.ZOrderToTop(o.Id())
-	}
+	/*
+		if o.SizeStatus() == SizeStatusMinimized {
+			r, c, h, w, p := o.GetMemorizedNormalStatus()
+			o.SetParent(p)
+			o.SetPosition(r, c)
+			o.Resize(h, w)
+			o.SetSizeStatus(SizeStatusNormal)
+			o.ZOrderToTop(o.Id())
+		}
+	*/
 }
