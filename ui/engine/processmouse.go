@@ -5,12 +5,11 @@ import (
 
 	"github.com/tpfeiffer67/console/screen"
 	"github.com/tpfeiffer67/console/ui/message"
-	"github.com/tpfeiffer67/console/ui/ntt"
 	"github.com/tpfeiffer67/console/ui/property"
 )
 
 type mouseControl struct {
-	pointer          *ntt.Pointer
+	pointer          *MousePointer
 	pointedEntity    any
 	mouseParams      message.ParamsMouse
 	mouseControlMode MouseControlMode

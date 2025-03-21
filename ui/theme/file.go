@@ -2,10 +2,10 @@ package theme
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 func SaveToFile(filename string) {
 	file, _ := json.MarshalIndent(CurrentTheme, "", " ")
-	_ = ioutil.WriteFile(filename, file, 0644)
+	_ = os.WriteFile(filename, file, 0644)
 }

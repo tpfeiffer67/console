@@ -1,3 +1,0 @@
-package ntt
-
-const DEFAULT_MINIMIZE_CLICKZONE_WIDTH = 20

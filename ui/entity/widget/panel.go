@@ -1,8 +1,9 @@
-package ntt
+package widget
 
 import (
 	"github.com/tpfeiffer67/console/screen"
 	"github.com/tpfeiffer67/console/screenutils"
+	"github.com/tpfeiffer67/console/ui/entity"
 	"github.com/tpfeiffer67/console/ui/message"
 	"github.com/tpfeiffer67/console/ui/property"
 	"github.com/tpfeiffer67/console/ui/theme"
@@ -198,7 +199,7 @@ func AddShadow(a any) {
 	if e, ok := a.(IShadowable); ok {
 		f := e.GetOnRender()
 		e.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
-			DrawShadowAccordingToTheTheme(sb, e.GetStencil(), pos, e)
+			entity.DrawShadowAccordingToTheTheme(sb, e.GetStencil(), pos, e)
 			f(sb, pos)
 		})
 	}

@@ -1,4 +1,4 @@
-package ntt
+package widget
 
 import (
 	"github.com/tpfeiffer67/console/screen"

@@ -1,4 +1,4 @@
-package ntt
+package widget
 
 import (
 	"image"

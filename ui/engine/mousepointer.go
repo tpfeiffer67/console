@@ -1,11 +1,11 @@
-package ntt
+package engine
 
 import (
 	"github.com/tpfeiffer67/console/screen"
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
-type Pointer struct {
+type MousePointer struct {
 	*screen.RuneCanvas
 	*screen.EmphasisCanvas
 	*screen.FColorCanvas
@@ -13,8 +13,8 @@ type Pointer struct {
 	Visible bool
 }
 
-func NewPointer() *Pointer {
-	o := new(Pointer)
+func NewMousePointer() *MousePointer {
+	o := new(MousePointer)
 	// TODO To define in Theme (DrawBlock rune + color)
 	o.RuneCanvas = screen.NewRuneCanvas(1, 1)
 	o.RuneCanvas.DefaultValue = '▓'
@@ -29,7 +29,7 @@ func NewPointer() *Pointer {
 	return o
 }
 
-func (o *Pointer) RenderAtPosition(sb *screen.Buffer, pos screen.Coordinates) {
+func (o *MousePointer) RenderAtPosition(sb *screen.Buffer, pos screen.Coordinates) {
 	if o.Visible {
 		o.RuneCanvas.Render(sb, o.Stencil, pos, screen.Coordinates{})
 		o.EmphasisCanvas.Render(sb, o.Stencil, pos, screen.Coordinates{})

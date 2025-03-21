@@ -1,4 +1,4 @@
-package ntt
+package entity
 
 import (
 	"github.com/tpfeiffer67/console/screen"

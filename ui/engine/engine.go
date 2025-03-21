@@ -8,7 +8,6 @@ import (
 	"github.com/eiannone/keyboard"
 	"github.com/tpfeiffer67/console/screen"
 	"github.com/tpfeiffer67/console/ui/message"
-	"github.com/tpfeiffer67/console/ui/ntt"
 	"github.com/tpfeiffer67/console/ui/property"
 	"github.com/tpfeiffer67/console/ui/theme"
 )
@@ -59,7 +58,7 @@ func New(inputMessageChannel chan message.InputMessage, uiMessageChannel chan me
 	o.Logger = &NilLogger{}
 	o.Actions = NewActions()
 	o.Entities = make(map[string]any)
-	o.pointer = ntt.NewPointer()
+	o.pointer = NewMousePointer()
 	o.initScreen()
 
 	o.RefreshInterval = time.Millisecond * time.Duration(refreshIntervalInMilliseconds)
@@ -72,6 +71,15 @@ func New(inputMessageChannel chan message.InputMessage, uiMessageChannel chan me
 
 func (o *Engine) SetLogger(logger Logger) {
 	o.Logger = logger
+}
+
+func NewWithChannels(renderFunc func(o *screen.Buffer) int, refreshIntervalInMilliseconds int) (*Engine, chan message.InputMessage, chan message.Message, error) {
+	inputMessagesChannel := make(chan message.InputMessage, 1)
+	uiMessagesChannel := make(chan message.Message, 100)
+
+	ngn, err := New(inputMessagesChannel, uiMessagesChannel, renderFunc, refreshIntervalInMilliseconds)
+
+	return ngn, inputMessagesChannel, uiMessagesChannel, err
 }
 
 func (o *Engine) SetFuncBeforeInputMessageProcessing(f func(message.InputMessage)) {

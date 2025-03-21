@@ -80,12 +80,17 @@ type Positioner interface {
 	PositionSetter
 }
 
-type SizeGetterAndPositionSetter interface {
+type SizeAndPositionGetter interface {
 	SizeGetter
+	PositionGetter
+}
+
+type SizeAndPositionSetter interface {
+	SizeSetter
 	PositionSetter
 }
 
-type SizeSetterAndPositionSetter interface {
-	SizeSetter
+type SizeGetterAndPositionSetter interface {
+	SizeGetter
 	PositionSetter
 }

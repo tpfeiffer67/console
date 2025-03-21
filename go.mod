@@ -8,6 +8,8 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/nathan-fiscaletti/consolesize-go v0.0.0-20220204101620-317176b6684d
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 replace (
@@ -15,8 +17,10 @@ replace (
 	github.com/tpfeiffer67/console/tcellterm => ./tcellterm
 	github.com/tpfeiffer67/console/terminal => ./terminal
 	github.com/tpfeiffer67/console/ui/engine => ./ui/engine
+	github.com/tpfeiffer67/console/ui/entity => ./ui/entity
+	github.com/tpfeiffer67/console/ui/entity/extwidget => ./ui/entity/extwidget
+	github.com/tpfeiffer67/console/ui/entity/widget => ./ui/entity/widget
 	github.com/tpfeiffer67/console/ui/message => ./ui/message
-	github.com/tpfeiffer67/console/ui/ntt => ./ui/ntt
 )
 
 require (

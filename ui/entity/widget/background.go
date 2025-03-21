@@ -1,18 +1,16 @@
-package ntt
+package widget
 
 import (
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
-type Desktop struct {
+type Background struct {
 	IWidget
 	Background rune
 }
 
-// TODO add hovered style
-
-func NewDesktop(id string, height, width int, syst ISystem) *Desktop {
-	o := new(Desktop)
+func NewBackground(id string, height, width int, syst ISystem) *Background {
+	o := new(Background)
 	o.IWidget = NewWidget(id, height, width, syst)
 	o.SetZOrderLayer(-1000)
 	o.SetZOrder(1)
@@ -24,7 +22,7 @@ func NewDesktop(id string, height, width int, syst ISystem) *Desktop {
 	})
 
 	o.SetOnDraw(func() {
-		style, _ := o.GetStyle(theme.STYLE_DESKTOP)
+		style, _ := o.GetStyle(theme.STYLE_BACKGROUND)
 		o.SetDefaults(o.Background, style)
 		o.Clear()
 	})
@@ -36,6 +34,6 @@ func NewDesktop(id string, height, width int, syst ISystem) *Desktop {
 	return o
 }
 
-func (o *Desktop) update() {
-	o.Background, _ = o.GetChar(theme.DESKTOP_BACKGROUND)
+func (o *Background) update() {
+	o.Background, _ = o.GetChar(theme.BACKGROUND_PATTERN)
 }

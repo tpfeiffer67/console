@@ -1,4 +1,4 @@
-package ntt
+package widget
 
 import (
 	"github.com/tpfeiffer67/console/screen"
@@ -37,7 +37,7 @@ func NewMinimizingBar(id string, syst ISystem) *MinimizingBar {
 				row++
 				col = 0
 			}
-			if e, ok := a.(screen.SizeSetterAndPositionSetter); ok {
+			if e, ok := a.(screen.SizeAndPositionSetter); ok {
 				e.SetPosition(row, col)
 				e.Resize(1, stickerWidth)
 			}

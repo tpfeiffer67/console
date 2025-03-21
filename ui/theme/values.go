@@ -1,6 +1,10 @@
 package theme
 
-import "github.com/tpfeiffer67/console/screen"
+import (
+	"errors"
+
+	"github.com/tpfeiffer67/console/screen"
+)
 
 type IValuesMap interface {
 	GetMap() ValuesMap
@@ -19,9 +23,10 @@ type IValuesMap interface {
 	GetStyleDef(string, screen.Style) (screen.Style, bool)
 	GetColor(string) (screen.Color, bool)
 	GetColorDef(string, screen.Color) (screen.Color, bool)
+	GetAny(string) (any, error)
 }
 
-type ValuesMap map[string]interface{}
+type ValuesMap map[string]any
 
 func (o ValuesMap) GetMap() ValuesMap {
 	return o
@@ -110,4 +115,11 @@ func (o ValuesMap) GetColorDef(name string, def screen.Color) (screen.Color, boo
 		return v, true
 	}
 	return def, false
+}
+
+func (o ValuesMap) GetAny(name string) (any, error) {
+	if a, ok := o[name]; ok {
+		return a, nil
+	}
+	return nil, errors.New("value not found")
 }

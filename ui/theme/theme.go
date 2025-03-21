@@ -3,8 +3,10 @@ package theme
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/tpfeiffer67/console/screen"
+	"gopkg.in/yaml.v3"
 )
 
 type ITheme interface {
@@ -175,7 +177,7 @@ func SetThemeDefault() {
 	addStyle(STYLE_CHECKBOX_HOVERED, ",P0,P6")
 	addStyle(STYLE_CHECKBOX_FOCUSED, ",S0,S4")
 	addStyle(STYLE_CHECKBOX_FOCUSEDHOVERED, ",S0,S6")
-	addStyle(STYLE_DESKTOP, ",P8,0")
+	addStyle(STYLE_BACKGROUND, ",P8,0")
 	addStyle(STYLE_IMAGE_BACKGROUND, ",$1,TRANSPARENT")
 	addStyle(STYLE_LABEL, ",#76b5c5,TRANSPARENT")
 
@@ -206,7 +208,7 @@ func SetThemeDefault() {
 	CurrentTheme[BUTTON_FRAME] = 7
 	CurrentTheme[CHECKBOX_NOTCHECKED] = "☐ "
 	CurrentTheme[CHECKBOX_CHECKED] = "🗹 "
-	CurrentTheme[DESKTOP_BACKGROUND] = '●'
+	CurrentTheme[BACKGROUND_PATTERN] = '●'
 	CurrentTheme[IMAGE_BACKGROUND] = '░'
 	CurrentTheme[MENUBAR_FIRST_ITEM_POSITION] = 2
 	CurrentTheme[MENUBAR_SPACE_BETWEEN_ITEMS] = 3
@@ -303,7 +305,7 @@ func SetThemeTerminal() {
 	addStyle(STYLE_CHECKBOX_HOVERED, ",P0,P0")
 	addStyle(STYLE_CHECKBOX_FOCUSED, ",S0,S4")
 	addStyle(STYLE_CHECKBOX_FOCUSEDHOVERED, ",S0,S6")
-	addStyle(STYLE_DESKTOP, ",#111122,0")
+	addStyle(STYLE_BACKGROUND, ",#111122,0")
 	addStyle(STYLE_IMAGE_BACKGROUND, ",$1,TRANSPARENT")
 	addStyle(STYLE_LABEL, ",#76b5c5,TRANSPARENT")
 	addStyle(STYLE_MENUBAR, ",P0,P4")
@@ -332,7 +334,7 @@ func SetThemeTerminal() {
 	CurrentTheme[BUTTON_FRAME] = 0
 	CurrentTheme[CHECKBOX_NOTCHECKED] = "[ ]  "
 	CurrentTheme[CHECKBOX_CHECKED] = "[x]  "
-	CurrentTheme[DESKTOP_BACKGROUND] = '°'
+	CurrentTheme[BACKGROUND_PATTERN] = '°'
 	CurrentTheme[IMAGE_BACKGROUND] = '░'
 	CurrentTheme[MENUBAR_FIRST_ITEM_POSITION] = 2
 	CurrentTheme[MENUBAR_SPACE_BETWEEN_ITEMS] = 3
@@ -350,8 +352,8 @@ func SetThemeTerminal() {
 }
 
 func addStyle(styleId, styleDescriptionString string) {
-	s := styleId + "," + styleDescriptionString
-	name, style := styleFromDescriptionString(s)
+	s := styleId + styleDescriptionString + ","
+	name, style := styleFromDescriptionStringOld(s)
 	CurrentTheme[name] = style
 }
 
@@ -375,15 +377,17 @@ func ToColorMap(s string, def screen.Color, colormap ValuesMap) screen.Color {
 		return screen.Transparent
 	}
 
-	if s[:1] == "#" {
-		colorNRGBA, _ := ParseHexColor(s)
-		return screen.NewTrueColor(colorNRGBA)
-	}
+	if len(s) > 0 {
+		if s[:1] == "#" {
+			colorNRGBA, _ := ParseHexColor(s)
+			return screen.NewTrueColor(colorNRGBA)
+		}
 
-	if s[:1] == "$" {
-		color256, _ := strconv.Atoi(s[1:])
-		if color256 >= 0 && color256 < 256 {
-			return screen.NewColor(color256)
+		if s[:1] == "$" {
+			color256, _ := strconv.Atoi(s[1:])
+			if color256 >= 0 && color256 < 256 {
+				return screen.NewColor(color256)
+			}
 		}
 	}
 
@@ -394,3 +398,287 @@ func ToColorMap(s string, def screen.Color, colormap ValuesMap) screen.Color {
 func ToColor(s string) screen.Color {
 	return ToColorMap(s, screen.Color{}, CurrentTheme)
 }
+
+func ToColorFromTheme(s string, theme map[string]any) screen.Color {
+	return ToColorMap(s, screen.Color{}, theme)
+}
+
+/*
+	func LoadTheme(fileName string) error {
+		theme, err := loadThemeFile(fileName)
+		if err != nil {
+			return fmt.Errorf("error read theme file: %w", err)
+		}
+		processColors(theme)
+
+		return nil
+	}
+
+	func loadThemeFile(fileName string) (map[string]any, error) {
+		yamlFile, err := os.ReadFile(fileName)
+		if err != nil {
+			return nil, fmt.Errorf("error read theme file: %w", err)
+		}
+	}
+*/
+
+func TestTheme() {
+	CurrentTheme, _ = loadThemeFromString(defaultTheme)
+}
+
+func TestTheme2() {
+	CurrentTheme, _ = loadThemeFromString(theme2)
+}
+
+func loadThemeFromString(y string) (map[string]any, error) {
+	theme := make(map[string]any)
+	err := yaml.Unmarshal([]byte(y), &theme)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshal theme file: %w", err)
+	}
+
+	processColors(theme)
+	processStyle(theme)
+
+	return theme, nil
+}
+
+func processColors(theme map[string]any) {
+	for k, v := range theme {
+		if strings.HasPrefix(k, "color_") {
+			theme[k[6:]] = ToColor(v.(string))
+		}
+	}
+}
+
+func processStyle(theme map[string]any) {
+	for k, v := range theme {
+		if strings.HasPrefix(k, "style_") {
+			theme[k] = styleFromDescriptionString(v.(string), theme)
+		}
+	}
+}
+
+const defaultTheme = `color_P0: "#000F1C"
+color_P1: "#081827"
+color_P2: "#102231"
+color_P3: "#182B3C"
+color_P4: "#213446"
+color_P5: "#293D51"
+color_P6: "#31475B"
+color_P7: "#395066"
+color_P8: "#415970"
+color_P9: "#4D6984"
+color_P10: "#587A99"
+color_P11: "#648AAD"
+color_P12: "#709AC2"
+color_P13: "#7CAAD6"
+color_P14: "#87BBEB"
+color_P15: "#93CBFF"
+color_S0: "#100700"
+color_S1: "#2E1300"
+color_S2: "#4C1F00"
+color_S3: "#6A2B00"
+color_S4: "#883700"
+color_S5: "#A54200"
+color_S6: "#C34E00"
+color_S7: "#E15A00"
+color_S8: "#FF6600"
+color_S9: "#FF781E"
+color_S10: "#FF8B3D"
+color_S11: "#FF9D5B"
+color_S12: "#FFAF7A"
+color_S13: "#FFC198"
+color_S14: "#FFD4B7"
+color_S15: "#FFE6D5"
+color_BL: "#000000"
+color_WH: "#FFFFFF"
+color_G0: "#000000"
+color_G1: "#111111"
+color_G2: "#222222"
+color_G3: "#333333"
+color_G4: "#444444"
+color_G5: "#555555"
+color_G6: "#666666"
+color_G7: "#777777"
+color_G8: "#888888"
+color_G9: "#999999"
+color_G10: "#AAAAAA"
+color_G11: "#BBBBBB"
+color_G12: "#CCCCCC"
+color_G13: "#DDDDDD"
+color_G14: "#EEEEEE"
+color_G15: "#FFFFFF"
+color_g0: "#001D23"
+color_g1: "#1B383E"
+color_g2: "#355359"
+color_g3: "#506E74"
+color_g4: "#6A888E"
+color_g5: "#85A3A9"
+color_g6: "#9FBEC4"
+color_g7: "#BAD9DF"
+style_button: "P1,P4"
+style_button_hovered: "P2,P9"
+style_button_focused: "S2,S9"
+style_button_focusedhovered: "S2,S12"
+style_button_down: "S12,S2"
+style_checkbox: "P0,P4"
+style_checkbox_hovered: "P0,P6"
+style_checkbox_focused: "S0,S4"
+style_checkbox_focusedhovered: "S0,S6"
+style_background: "P8,0"
+style_image_background: "$1,TRANSPARENT"
+style_label: "#76b5c5,TRANSPARENT"
+style_menubar: "P2,P9"
+style_menubar_hovered: "P2,P9"
+style_menubar_focused: "P2,P9"
+style_menubar_focusedhovered: "P2,P9"
+style_menuitem: "P2,P9"
+style_menuitem_hovered: "P2,P9"
+style_menuitem_focused: "P2,P9"
+style_menuitem_focusedhovered: "P14,P2"
+style_menudropdown: "P2,P9"
+style_menudropdown_hovered: "P2,P9"
+style_menudropdown_focused: "P2,P9"
+style_menudropdown_focusedgroup: "P2,P9"
+style_minimizingbar: "#f4dc6280,#f4dc6280"
+style_panel: "P0,P3"
+style_panel_hovered: "P0,P7"
+style_panel_focused: "S2,S5"
+style_panel_focusedhovered: "S2,S10"
+style_statusbar: "P4,P7"
+style_trackbar: "P4,P7"
+style_trackbar_hovered: "P1,P5"
+style_trackbar_focused: "S5,S7"
+style_trackbar_focusedhovered: "S1,S6"
+button_frame: 7
+checkbox_notchecked: "☐ "
+checkbox_checked: "🗹 "
+background_pattern: '●'
+image_background: '░'
+menubar_first_item_position: 3
+menubar_space_between_items: 2
+menudropdown_frame: 7
+minimizingbar_sticker_width: 30
+minimizingbar_click_width: 10
+panel_frame: 6
+statusbar_items_separator: " | "
+trackbar_cursor: '▼'
+trackbar_background: '-'
+shadow_enabled: true
+shadow_value: 120
+shadow_vertical_offset: 1
+shadow_horizontal_offset: 2
+`
+
+const theme2 = `color_P0: "#000F1C"
+color_S1: "#081827"
+color_S2: "#102231"
+color_S3: "#182B3C"
+color_S4: "#213446"
+color_S5: "#293D51"
+color_S6: "#31475B"
+color_S7: "#395066"
+color_S8: "#415970"
+color_S9: "#4D6984"
+color_S10: "#587A99"
+color_S11: "#648AAD"
+color_S12: "#709AC2"
+color_S13: "#7CAAD6"
+color_S14: "#87BBEB"
+color_S15: "#93CBFF"
+color_P0: "#100700"
+color_P1: "#2E1300"
+color_P2: "#4C1F00"
+color_P3: "#6A2B00"
+color_P4: "#883700"
+color_P5: "#A54200"
+color_P6: "#C34E00"
+color_P7: "#E15A00"
+color_P8: "#FF6600"
+color_P9: "#FF781E"
+color_P10: "#FF8B3D"
+color_P11: "#FF9D5B"
+color_P12: "#FFAF7A"
+color_P13: "#FFC198"
+color_P14: "#FFD4B7"
+color_P15: "#FFE6D5"
+color_BL: "#000000"
+color_WH: "#FFFFFF"
+color_G0: "#000000"
+color_G1: "#111111"
+color_G2: "#222222"
+color_G3: "#333333"
+color_G4: "#444444"
+color_G5: "#555555"
+color_G6: "#666666"
+color_G7: "#777777"
+color_G8: "#888888"
+color_G9: "#999999"
+color_G10: "#AAAAAA"
+color_G11: "#BBBBBB"
+color_G12: "#CCCCCC"
+color_G13: "#DDDDDD"
+color_G14: "#EEEEEE"
+color_G15: "#FFFFFF"
+color_g0: "#001D23"
+color_g1: "#1B383E"
+color_g2: "#355359"
+color_g3: "#506E74"
+color_g4: "#6A888E"
+color_g5: "#85A3A9"
+color_g6: "#9FBEC4"
+color_g7: "#BAD9DF"
+style_button: "P1,P4"
+style_button_hovered: "P2,P9"
+style_button_focused: "S2,S9"
+style_button_focusedhovered: "S2,S12"
+style_button_down: "S12,S2"
+style_checkbox: "P0,P4"
+style_checkbox_hovered: "P0,P6"
+style_checkbox_focused: "S0,S4"
+style_checkbox_focusedhovered: "S0,S6"
+style_background: "P8,0"
+style_image_background: "$1,TRANSPARENT"
+style_label: "#76b5c5,TRANSPARENT"
+style_menubar: "P2,P9"
+style_menubar_hovered: "P2,P9"
+style_menubar_focused: "P2,P9"
+style_menubar_focusedhovered: "P2,P9"
+style_menuitem: "P2,P9"
+style_menuitem_hovered: "P2,P9"
+style_menuitem_focused: "P2,P9"
+style_menuitem_focusedhovered: "P14,P2"
+style_menudropdown: "P2,P9"
+style_menudropdown_hovered: "P2,P9"
+style_menudropdown_focused: "P2,P9"
+style_menudropdown_focusedgroup: "P2,P9"
+style_minimizingbar: "#f4dc6280,#f4dc6280"
+style_panel: "P0,P3"
+style_panel_hovered: "P0,P7"
+style_panel_focused: "S2,S5"
+style_panel_focusedhovered: "S2,S10"
+style_statusbar: "P4,P7"
+style_trackbar: "P4,P7"
+style_trackbar_hovered: "P1,P5"
+style_trackbar_focused: "S5,S7"
+style_trackbar_focusedhovered: "S1,S6"
+button_frame: 7
+checkbox_notchecked: "☐ "
+checkbox_checked: "🗹 "
+background_pattern: '●'
+image_background: '░'
+menubar_first_item_position: 3
+menubar_space_between_items: 2
+menudropdown_frame: 7
+minimizingbar_sticker_width: 30
+minimizingbar_click_width: 10
+panel_frame: 6
+statusbar_items_separator: " | "
+trackbar_cursor: '▼'
+trackbar_background: '-'
+shadow_enabled: true
+shadow_value: 120
+shadow_vertical_offset: 1
+shadow_horizontal_offset: 2
+`

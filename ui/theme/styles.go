@@ -13,7 +13,26 @@ import (
 // TODO Add error return
 // TODO Use StringToColor (value, name, index ...)
 // TODO Create regex to validate format
-func styleFromDescriptionString(description string) (string, screen.Style) {
+func styleFromDescriptionString(description string, theme map[string]any) screen.Style {
+	style := screen.Style{}
+	fields := strings.Split(description, ",")
+
+	if len(fields) > 0 {
+		style.FColor = ToColorFromTheme(fields[0], theme)
+	}
+
+	if len(fields) > 1 {
+		style.BColor = ToColorFromTheme(fields[1], theme)
+	}
+
+	if len(fields) > 2 {
+		setStyleEmphasis(fields[2], &style)
+	}
+
+	return style
+}
+
+func styleFromDescriptionStringOld(description string) (string, screen.Style) {
 	style := screen.Style{}
 
 	fields := strings.Split(description, ",")
@@ -23,10 +42,9 @@ func styleFromDescriptionString(description string) (string, screen.Style) {
 	if len(fields[0]) == 0 {
 		return "", style
 	}
-
-	setStyleEmphasis(fields[1], &style)
-	style.FColor = ToColor(fields[2])
-	style.BColor = ToColor(fields[3])
+	setStyleEmphasis(fields[3], &style)
+	style.FColor = ToColor(fields[1])
+	style.BColor = ToColor(fields[2])
 	return fields[0], style
 }
 

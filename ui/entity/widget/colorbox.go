@@ -1,6 +1,8 @@
-package ntt
+package widget
 
-import "github.com/tpfeiffer67/console/screen"
+import (
+	"github.com/tpfeiffer67/console/screen"
+)
 
 type ColorBox struct {
 	IWidget

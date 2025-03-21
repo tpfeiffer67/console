@@ -1,4 +1,4 @@
-package ntt
+package entity
 
 /*
 type SizeManager interface {

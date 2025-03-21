@@ -1,4 +1,4 @@
-package ntt
+package widget
 
 import (
 	"github.com/tpfeiffer67/console/screen"
@@ -8,14 +8,14 @@ import (
 	"github.com/tpfeiffer67/console/ui/theme"
 )
 
-type Button struct {
+type FlatButton struct {
 	IWidget
 	property.PropertyText
-	down bool
+	property.OnSelect
 }
 
-func NewButton(id string, row, col int, height, width int, label string, syst ISystem) *Button {
-	o := new(Button)
+func NewFlatButton(id string, row, col int, height, width int, label string, syst ISystem) *FlatButton {
+	o := new(FlatButton)
 	o.IWidget = NewWidget(id, height, width, syst)
 	o.SetPosition(row, col)
 	o.SetCanMove(false)
@@ -32,33 +32,41 @@ func NewButton(id string, row, col int, height, width int, label string, syst IS
 	})
 
 	o.SetOnDraw(func() {
+		// TODO to improve
 		style := ClearWithStyle(o, o.IWidget, theme.STYLE_BUTTON, theme.STYLE_BUTTON_HOVERED, theme.STYLE_BUTTON_FOCUSED, theme.STYLE_BUTTON_FOCUSEDHOVERED)
-		frame, _ := o.GetInt(theme.BUTTON_FRAME)
-		screenutils.DrawFrame(o.GetRuneCanvas(), 0, 0, o.Height(), o.Width(), frame)
-		screenutils.DrawStyledString(1, 1, o.Text(), o, style, theme.ToColor)
+		if o.Selected() {
+			style = ClearWithStyle(o, o.IWidget, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN, theme.STYLE_BUTTON_DOWN)
+		}
+		screenutils.DrawStyledString(0, 0, o.Text(), o, style, theme.ToColor)
 	})
 
 	o.SetOnRender(func(sb *screen.Buffer, pos screen.Coordinates) {
-		// TODO test Visible
-		if !o.down {
-			DrawShadowAccordingToTheTheme(sb, o.GetStencil(), pos, o.IWidget)
-			o.Render(sb, pos)
-			return
-		}
-		verticalOffset, _ := o.GetInt(theme.SHADOW_VERTICAL_OFFSET)
-		horizontalOffset, _ := o.GetInt(theme.SHADOW_HORIZONTAL_OFFSET)
-		pos.Row = pos.Row + verticalOffset
-		pos.Col = pos.Col + horizontalOffset
 		o.Render(sb, pos)
 	})
 
-	o.SetListener(message.MessageIdMouseDown, func(messageParams interface{}) bool {
-		o.down = true
-		return true
-	})
+	unselectGroup := func(group int) {
+		f := func(i any) {
+			if e, ok := i.(property.Selecter); ok {
+				if e.GetSelectGroup() == group {
+					e.Unselect()
+				}
+			}
+		}
+		syst.CallFuncWithAllEntities(f)
+	}
 
-	o.SetListener(message.MessageIdMouseUp, func(messageParams interface{}) bool {
-		o.down = false
+	o.SetListener(message.MessageIdMouseDown, func(messageParams interface{}) bool {
+		switch o.Selected() {
+		case true:
+			o.Unselect()
+		default:
+			group := o.GetSelectGroup()
+			if group != 0 {
+				unselectGroup(group)
+			}
+			o.Select()
+		}
+
 		return true
 	})
 
